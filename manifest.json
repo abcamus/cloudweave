@@ -3,7 +3,7 @@
   "name": "CloudWeave",
   "version": "0.1.0",
   "minAppVersion": "1.8.7",
-  "description": "Cloud-storage file nodes + AI analysis for Obsidian Canvas. Browse & insert files from Aliyun, Baidu, Quark, OneDrive.",
+  "description": "Cloud-storage file nodes + AI analysis for Canvas. Browse & insert files from Aliyun, Baidu, Quark, OneDrive.",
   "author": "Sync Vault",
   "authorUrl": "",
   "fundingUrl": "",
