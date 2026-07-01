@@ -11,6 +11,7 @@ export class AIPanel {
   private sendBtn: HTMLElement
   private contextInfoEl: HTMLElement
   private config: LLMConfig
+  private selectionObserver: number | undefined
 
   constructor(
     private app: App,
@@ -53,8 +54,7 @@ export class AIPanel {
   }
 
   private registerSelectionObserver() {
-    const interval = window.setInterval(() => this.updateContextInfo(), 1000)
-    ;(window as any).__ccAiInterval = interval
+    this.selectionObserver = window.setInterval(() => this.updateContextInfo(), 1000)
   }
 
   private updateContextInfo() {
@@ -63,8 +63,7 @@ export class AIPanel {
   }
 
   unmount() {
-    const interval = (window as any).__ccAiInterval
-    if (interval) window.clearInterval(interval)
+    if (this.selectionObserver != null) window.clearInterval(this.selectionObserver)
     this.container?.empty()
   }
 
@@ -91,7 +90,7 @@ export class AIPanel {
       const answer = await this.aiService.queryLLM(context, question, this.config)
       this.answerEl.setText(answer)
     } catch (e) {
-      this.answerEl.setText(t("aiError", e.message))
+      this.answerEl.setText(t("aiError", e instanceof Error ? e.message : String(e)))
     } finally {
       this.sendBtn.setText(t("aiSend"))
       this.sendBtn.removeClass("cc-disabled")
@@ -99,10 +98,10 @@ export class AIPanel {
   }
 
   private loadConfig(): LLMConfig {
-    const raw = localStorage.getItem("cc-llm-config")
-    if (raw) {
+    const raw = this.app.loadLocalStorage("cc-llm-config") as string | null
+    if (typeof raw === "string") {
       try {
-        return JSON.parse(raw)
+        return JSON.parse(raw) as LLMConfig
       } catch {
         /* ignore */
       }
