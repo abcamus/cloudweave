@@ -8,8 +8,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "lint": "eslint src/",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf main.js manifest.json styles.css",
-    "deploy": "cp main.js manifest.json styles.css /Users/abcamus/obsidian仓库/AI库/.obsidian/plugins/cloudweave/"
+    "clean": "rm -rf main.js manifest.json styles.css"
   },
   "keywords": [
     "obsidian",
