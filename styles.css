@@ -73,7 +73,7 @@
 
 /* ───── AI Items in .canvas-card-menu ───── */
 .cc-ai-menu-items {
-  display: contents;
+  display: inline-flex;
 }
 
 /* ───── AI Popover (custom query input) ───── */
