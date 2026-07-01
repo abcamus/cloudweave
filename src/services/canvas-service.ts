@@ -110,7 +110,7 @@ export class CanvasService {
   }
 
   private scrollToNode(nodeId: string) {
-    setTimeout(() => {
+    window.setTimeout(() => {
       const nodeEl = document.querySelector(`.canvas-node[data-id="${nodeId}"]`) as HTMLElement
       if (!nodeEl) return
 
@@ -127,7 +127,7 @@ export class CanvasService {
       const zoomArea = nodeEl.parentElement
       if (!zoomArea) return
 
-      let tx = 0, ty = 0, scale = 1
+      let scale = 1
 
       const ts = zoomArea.style.transform || window.getComputedStyle(zoomArea).transform
 
@@ -135,13 +135,11 @@ export class CanvasService {
       if (matrix) {
         const p = matrix[1].split(",").map(v => parseFloat(v.trim()))
         if (p.length >= 6) {
-          tx = p[4]; ty = p[5]; scale = Math.abs(p[0])
+          scale = Math.abs(p[0])
         }
       } else {
         const m = ts.replace(/\s+/g, " ").match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/)
         if (m) {
-          tx = parseFloat(m[1]) || 0
-          ty = parseFloat(m[2]) || 0
           scale = parseFloat(m[3]) || 1
         }
       }
