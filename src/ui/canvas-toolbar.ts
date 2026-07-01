@@ -53,10 +53,10 @@ export class CanvasToolbar {
     this.questionInput = body.createEl("textarea", {
       cls: "cc-ai-popover-textarea",
       attr: { placeholder: t("aiAskShort"), rows: "3" },
-    }) as HTMLTextAreaElement
+    })
 
     const footer = this.inputPopover.createDiv("cc-ai-popover-footer")
-    const hint = footer.createSpan({ cls: "cc-ai-popover-hint", text: "Enter 发送 · Shift+Enter 换行 · Esc 关闭" })
+    footer.createSpan({ cls: "cc-ai-popover-hint", text: "Enter 发送 · Shift+Enter 换行 · Esc 关闭" })
 
     const sendBtn = footer.createEl("button", { cls: "cc-ai-popover-send-btn" })
     setIcon(sendBtn, "arrow-up")
@@ -65,7 +65,7 @@ export class CanvasToolbar {
       const q = this.questionInput.value.trim()
       if (!q) return
       this.inputPopover.hide()
-      this.customQuery(q)
+      void this.customQuery(q)
     }
 
     sendBtn.onClickEvent(ask)
@@ -90,7 +90,7 @@ export class CanvasToolbar {
   }
 
   private getCanvasView(): CanvasView | null {
-    const view = this.app.workspace.getActiveViewOfType(ItemView) as CanvasView | null
+    const view = this.app.workspace.getActiveViewOfType(ItemView)
     if (!view || view.getViewType() !== CANVAS_VIEW_TYPE) return null
     return view
   }
@@ -100,7 +100,7 @@ export class CanvasToolbar {
     if (!view) return null
     const container = view.contentEl || view.containerEl
     if (!container) return null
-    return container.querySelector(".canvas-menu") as HTMLElement | null
+    return container.querySelector(".canvas-menu")
   }
 
   private getCardMenuContainer(): HTMLElement | null {
@@ -108,7 +108,7 @@ export class CanvasToolbar {
     if (!view) return null
     const container = view.contentEl || view.containerEl
     if (!container) return null
-    return container.querySelector(".canvas-card-menu") as HTMLElement | null
+    return container.querySelector(".canvas-card-menu")
   }
 
   private poll() {
@@ -170,13 +170,10 @@ export class CanvasToolbar {
     }
 
     const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault)
-    new CloudFilePickerModal(
-      this.app,
-      this.syncVault,
-      async (file) => {
-        await cloudNodeService.insertCloudFile(file)
-      }
-    ).open()
+    const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
+      void cloudNodeService.insertCloudFile(file)
+    })
+    modal.open()
   }
 
   private injectItems(menuEl: HTMLElement) {
@@ -204,7 +201,7 @@ export class CanvasToolbar {
 
   handleAction(action: string) {
     if (action === "explain" || action === "summarize" || action === "relate") {
-      this.runPreset(action)
+      void this.runPreset(action)
     } else if (action === "ask") {
       this.showInputPopover()
     }
@@ -265,7 +262,7 @@ export class CanvasToolbar {
       const answer = await this.aiService.queryLLM(context, prompt, this.config)
       await this.updateAINodeContent(nodeId, answer)
     } catch (e) {
-      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e.message)}`)
+      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e instanceof Error ? e.message : String(e))}`)
     }
   }
 
@@ -287,7 +284,7 @@ export class CanvasToolbar {
       const answer = await this.aiService.queryLLM(context, question, this.config)
       await this.updateAINodeContent(nodeId, answer)
     } catch (e) {
-      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e.message)}`)
+      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e instanceof Error ? e.message : String(e))}`)
     }
   }
 
@@ -344,10 +341,10 @@ export class CanvasToolbar {
   }
 
   private loadConfig(): LLMConfig {
-    const raw = localStorage.getItem("cc-llm-config")
+    const raw = this.app.loadLocalStorage("cc-llm-config") as string | null
     if (raw) {
       try {
-        return JSON.parse(raw)
+        return JSON.parse(raw) as LLMConfig
       } catch { /* ignore */ }
     }
     return { provider: "openai", apiKey: "", model: "gpt-4o-mini" }
