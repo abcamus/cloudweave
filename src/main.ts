@@ -26,16 +26,16 @@ export default class ContextCanvasPlugin extends Plugin {
   private timestampCmd: TimestampCommand
   private toolbar: CanvasToolbar | null = null
   private menuObserver: MutationObserver | null = null
-  private isCanvasContextMenu = false
+  private isCanvasBgContextMenu = false
 
   async onload() {
     initLocale()
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
-    this.aiService = new ContextAIService(this.app, this.canvasService)
+    this.aiService = new ContextAIService(this.app, this.canvasService, this.syncVault)
     this.insertCloudNodeCmd = new InsertCloudNodeCommand(this.app, this.canvasService, this.syncVault)
     this.timestampCmd = new TimestampCommand(this.app, this.canvasService)
-    this.toolbar = new CanvasToolbar(this.app, this.canvasService, this.aiService)
+    this.toolbar = new CanvasToolbar(this.app, this.canvasService, this.aiService, this.syncVault)
 
     this.registerCommands()
     this.initCanvasContextMenu()
@@ -61,16 +61,19 @@ export default class ContextCanvasPlugin extends Plugin {
 
   private initCanvasContextMenu() {
     document.addEventListener("contextmenu", (e) => {
-      this.isCanvasContextMenu = !!(e.target as HTMLElement).closest(".canvas-wrapper")
+      const target = e.target as HTMLElement
+      const inCanvas = !!target.closest(".canvas-wrapper")
+      const onNode = !!target.closest(".canvas-node")
+      this.isCanvasBgContextMenu = inCanvas && !onNode
     }, true)
 
     this.menuObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type !== "childList") continue
+        if (!this.isCanvasBgContextMenu) continue
         for (let i = 0; i < mutation.addedNodes.length; i++) {
           const el = mutation.addedNodes[i] as HTMLElement
           if (el.nodeType !== Node.ELEMENT_NODE) continue
-          if (!this.isCanvasContextMenu) continue
           if (el.matches?.(".menu")) {
             this.injectMenuItem(el)
           } else {

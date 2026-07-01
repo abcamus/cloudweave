@@ -75,6 +75,14 @@ export class SyncVaultBridge {
     return undefined
   }
 
+  async readCloudFile(path: string, cloudType: CloudDiskType, maxLength?: number): Promise<string> {
+    const result = await this.post("read_cloud_file", { path, cloudType, maxLength })
+    if (result.content?.[0]?.type === "text") {
+      return result.content[0].text
+    }
+    throw new Error(t("readFailed", "cloud file"))
+  }
+
   private async post(method: string, args: Record<string, unknown>): Promise<MCPResult> {
     const body = JSON.stringify({
       jsonrpc: "2.0",

@@ -1,14 +1,16 @@
 import { App, requestUrl } from "obsidian"
-import { CloudNodeMeta, LLMConfig, CanvasAIContext } from "../types"
+import { CloudNodeMeta, CloudDiskType, LLMConfig, CanvasAIContext } from "../types"
 import { CanvasService } from "./canvas-service"
 import { SpatialSemanticEncoder } from "./spatial-semantic-encoder"
+import { SyncVaultBridge } from "./sync-vault-bridge"
 
 const META_COMMENT_RE = /<!--\s*meta:\s*(\{.+?\})\s*-->/
 
 const SYSTEM_PROMPT = `你是一个 Canvas 画布助手。你可以分析画布上的节点内容、空间布局和连线关系。
 
 你可以使用以下工具：
-- read_file: 读取 vault 中指定文件的内容。当节点只提供了文件路径而没有具体内容时，你可以调用此工具来获取文件内容。`
+- read_file: 读取 vault 中指定文件的内容。当节点只提供了文件路径而没有具体内容时，你可以调用此工具来获取文件内容。
+- read_cloud_file: 读取云盘（百度网盘、阿里云盘、夸克网盘、OneDrive 等）中指定文件的内容。参数包括 cloudType（云盘类型: baidu/aliyun/quark/onedrive）、path（云盘中的文件路径）、maxLength（可选，最大读取字符数）。当节点标记为"云盘文件"时，你应该调用此工具读取文件的实际内容。`
 
 interface LLMMessage {
   role: string
@@ -50,6 +52,32 @@ const TOOLS: LLMToolDef[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "read_cloud_file",
+      description: "读取云盘（百度网盘、阿里云盘、夸克网盘、OneDrive 等）中指定文件的内容。传入云盘类型和文件路径。",
+      parameters: {
+        type: "object",
+        properties: {
+          cloudType: {
+            type: "string",
+            enum: ["baidu", "aliyun", "quark", "onedrive"],
+            description: "云盘类型",
+          },
+          path: {
+            type: "string",
+            description: "文件在云盘中的完整路径",
+          },
+          maxLength: {
+            type: "number",
+            description: "可选，读取的最大字符数，默认 50000",
+          },
+        },
+        required: ["cloudType", "path"],
+      },
+    },
+  },
 ]
 
 interface ToolCall {
@@ -79,6 +107,7 @@ export class ContextAIService {
   constructor(
     private app: App,
     private canvasService: CanvasService,
+    private syncVault: SyncVaultBridge,
   ) {}
 
   async buildContext(nodeIds: string[]): Promise<CanvasAIContext> {
@@ -108,6 +137,12 @@ export class ContextAIService {
 
       const content = node.text ?? node.content
       if (!content) continue
+
+      const meta = this.parseMeta(content)
+      if (meta?.cloudType && meta?.filePath) {
+        textContents.push(`[${label}] 云盘文件: ${meta.fileName} (${meta.cloudType}) 路径: ${meta.filePath}（可使用 read_cloud_file 工具读取内容）`)
+        continue
+      }
 
       const text = this.extractNodeContent(content)
       if (text) {
@@ -189,6 +224,20 @@ export class ContextAIService {
         if (!file) return `错误: 文件不存在: ${path}`
         const content = await this.app.vault.read(file)
         return content.slice(0, 5000)
+      }
+      case "read_cloud_file": {
+        const { cloudType, path: cloudPath, maxLength } = call.arguments
+        if (!cloudType || !cloudPath) return "错误: 缺少 cloudType 或 path 参数"
+        try {
+          const content = await this.syncVault.readCloudFile(
+            cloudPath,
+            cloudType as CloudDiskType,
+            maxLength ? Number(maxLength) : undefined,
+          )
+          return content
+        } catch (e) {
+          return `错误: 读取云盘文件失败: ${e instanceof Error ? e.message : String(e)}`
+        }
       }
       default:
         return `错误: 未知工具: ${call.name}`

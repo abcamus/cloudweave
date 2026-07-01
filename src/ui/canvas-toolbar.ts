@@ -3,6 +3,9 @@ import { t } from "../i18n"
 import { CANVAS_VIEW_TYPE } from "../constants"
 import { CanvasService } from "../services/canvas-service"
 import { ContextAIService } from "../services/context-ai-service"
+import { SyncVaultBridge } from "../services/sync-vault-bridge"
+import { CloudNodeService } from "../services/cloud-node-service"
+import { CloudFilePickerModal } from "./cloud-file-picker"
 import { LLMConfig } from "../types"
 import { FloatingCard } from "./floating-card"
 
@@ -13,6 +16,7 @@ const PRESET_PROMPTS: Record<string, string> = {
 }
 
 const CC_MENU_MARKER = "cc-ai-menu-items"
+const CC_CLOUD_MARKER = "cc-cloud-insert-btn"
 
 type CanvasView = ItemView & { contentEl?: HTMLElement }
 
@@ -28,6 +32,7 @@ export class CanvasToolbar {
     private app: App,
     private canvasService: CanvasService,
     private aiService: ContextAIService,
+    private syncVault: SyncVaultBridge,
   ) {
     this.config = this.loadConfig()
     this.card = new FloatingCard(this.app, document.body)
@@ -87,12 +92,26 @@ export class CanvasToolbar {
     this.pollInterval = window.setInterval(() => this.poll(), 500)
   }
 
-  private getCardMenu(): HTMLElement | null {
+  private getCanvasView(): CanvasView | null {
     const view = this.app.workspace.getActiveViewOfType(ItemView) as CanvasView | null
     if (!view || view.getViewType() !== CANVAS_VIEW_TYPE) return null
+    return view
+  }
+
+  private getCardMenu(): HTMLElement | null {
+    const view = this.getCanvasView()
+    if (!view) return null
     const container = view.contentEl || view.containerEl
     if (!container) return null
     return container.querySelector(".canvas-menu") as HTMLElement | null
+  }
+
+  private getCardMenuContainer(): HTMLElement | null {
+    const view = this.getCanvasView()
+    if (!view) return null
+    const container = view.contentEl || view.containerEl
+    if (!container) return null
+    return container.querySelector(".canvas-card-menu") as HTMLElement | null
   }
 
   private poll() {
@@ -102,6 +121,8 @@ export class CanvasToolbar {
       this.hideUI()
       return
     }
+
+    this.injectCloudButton()
 
     const menuEl = this.getCardMenu()
     if (!menuEl) {
@@ -124,6 +145,42 @@ export class CanvasToolbar {
 
   private hideUI() {
     this.currentSelection = []
+  }
+
+  private injectCloudButton() {
+    const cardMenu = this.getCardMenuContainer()
+    if (!cardMenu) return
+    if (cardMenu.querySelector(`.${CC_CLOUD_MARKER}`)) return
+
+    const btn = cardMenu.createEl("button", {
+      cls: `clickable-icon canvas-card-menu-button ${CC_CLOUD_MARKER}`,
+      attr: { "aria-label": t("insertCloudNode"), "data-tooltip-position": "top" },
+    })
+    setIcon(btn, "cloud")
+    btn.onClickEvent(() => this.openCloudPicker())
+  }
+
+  private async openCloudPicker() {
+    this.canvasService.refresh()
+    if (!this.canvasService.getCanvas()) {
+      new Notice(t("openCanvasFirst"))
+      return
+    }
+
+    const ready = await this.syncVault.ensureReady()
+    if (!ready) {
+      new Notice(t("mcpNotReady"))
+      return
+    }
+
+    const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault)
+    new CloudFilePickerModal(
+      this.app,
+      this.syncVault,
+      async (file) => {
+        await cloudNodeService.insertCloudFile(file)
+      }
+    ).open()
   }
 
   private injectItems(menuEl: HTMLElement) {
