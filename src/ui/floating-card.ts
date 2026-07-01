@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Component, setIcon } from "obsidian"
+import { App, MarkdownRenderer, Component, Notice, setIcon } from "obsidian"
 import { t } from "../i18n"
 
 export class FloatingCard {
@@ -6,6 +6,8 @@ export class FloatingCard {
   private contentEl: HTMLElement
   private _anchor: HTMLElement
   private renderComp: Component | null = null
+  private streamingText = ""
+  private copyBtn: HTMLElement
 
   constructor(
     private app: App,
@@ -21,9 +23,9 @@ export class FloatingCard {
 
     const actions = header.createDiv("cc-floating-card-actions")
 
-    const copyBtn = actions.createEl("button", { cls: "cc-floating-card-btn" })
-    setIcon(copyBtn, "copy")
-    copyBtn.onClickEvent(() => this.copyContent())
+    this.copyBtn = actions.createEl("button", { cls: "cc-floating-card-btn" })
+    setIcon(this.copyBtn, "copy")
+    this.copyBtn.onClickEvent(() => this.copyContent())
 
     const closeBtn = actions.createEl("button", { cls: "cc-floating-card-btn" })
     setIcon(closeBtn, "x")
@@ -39,6 +41,9 @@ export class FloatingCard {
   private async copyContent() {
     const text = this.contentEl.textContent || ""
     await navigator.clipboard.writeText(text)
+    new Notice("已复制")
+    setIcon(this.copyBtn, "check")
+    setTimeout(() => setIcon(this.copyBtn, "copy"), 1500)
   }
 
   setAnchor(el: HTMLElement) {
@@ -54,6 +59,24 @@ export class FloatingCard {
     const msg = this.contentEl.createSpan({ text: t("aiRequesting") })
     this.position()
     this.container.show()
+  }
+
+  showStreaming() {
+    this.renderComp?.unload()
+    this.renderComp = null
+    this.contentEl.empty()
+    this.contentEl.removeClass("cc-floating-card-loading")
+    this.contentEl.removeClass("cc-floating-card-error")
+    this.streamingText = ""
+    this.position()
+    this.container.show()
+  }
+
+  appendStream(chunk: string) {
+    this.streamingText += chunk
+    this.contentEl.setText(this.streamingText)
+    this.contentEl.scrollTop = this.contentEl.scrollHeight
+    this.position()
   }
 
   async showResult(text: string) {

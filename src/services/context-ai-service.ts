@@ -40,6 +40,8 @@ interface LLMResponse {
   toolCalls: ToolCall[] | null
 }
 
+type StreamChunk = (text: string) => void
+
 export class ContextAIService {
   private spatialEncoder = new SpatialSemanticEncoder()
 
@@ -90,7 +92,12 @@ export class ContextAIService {
     }
   }
 
-  async queryLLM(context: CanvasAIContext, question: string, config: LLMConfig): Promise<string> {
+  async queryLLM(
+    context: CanvasAIContext,
+    question: string,
+    config: LLMConfig,
+    onChunk?: StreamChunk,
+  ): Promise<string> {
     const messages = this.buildMessages(context, question)
 
     for (let round = 0; round < 5; round++) {
@@ -98,10 +105,14 @@ export class ContextAIService {
 
       switch (config.provider) {
         case "local":
-          response = await this.respondOllama(messages, TOOLS, config)
+          response = onChunk
+            ? await this.respondOllamaStream(messages, TOOLS, config, onChunk)
+            : await this.respondOllama(messages, TOOLS, config)
           break
         case "openai":
-          response = await this.respondOpenAI(messages, TOOLS, config)
+          response = onChunk
+            ? await this.respondOpenAIStream(messages, TOOLS, config, onChunk)
+            : await this.respondOpenAI(messages, TOOLS, config)
           break
         default:
           response = await this.respondOllama(messages, null, config)
@@ -109,7 +120,6 @@ export class ContextAIService {
 
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const call of response.toolCalls) {
-          console.debug('Tool call:', call);
           const result = await this.executeTool(call)
           messages.push({ role: "tool", name: call.name, content: result })
         }
@@ -188,6 +198,67 @@ export class ContextAIService {
     return { content: msg.content, toolCalls: null }
   }
 
+  private async respondOllamaStream(
+    messages: any[],
+    tools: any[] | null,
+    config: LLMConfig,
+    onChunk: StreamChunk,
+  ): Promise<LLMResponse> {
+    const url = config.endpoint || "http://localhost:11434/api/chat"
+    const body: any = {
+      model: config.model || "qwen2",
+      messages,
+      stream: true,
+      options: { num_predict: 4096 },
+    }
+    if (tools) body.tools = tools
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+
+    const reader = resp.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    let fullContent = ""
+    let toolCalls: ToolCall[] | null = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      const lines = buffer.split("\n")
+      buffer = lines.pop() || ""
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed) continue
+        try {
+          const data = JSON.parse(trimmed)
+          if (data.done) break
+          if (data.message?.content) {
+            fullContent += data.message.content
+            onChunk(data.message.content)
+          }
+          if (data.message?.tool_calls) {
+            toolCalls = data.message.tool_calls.map((tc: any) => ({
+              name: tc.function.name,
+              arguments: typeof tc.function.arguments === "string"
+                ? JSON.parse(tc.function.arguments)
+                : tc.function.arguments,
+            }))
+          }
+        } catch { /* skip malformed lines */ }
+      }
+    }
+
+    if (toolCalls) return { content: null, toolCalls }
+    return { content: fullContent, toolCalls: null }
+  }
+
   private async respondOpenAI(messages: any[], tools: any[] | null, config: LLMConfig): Promise<LLMResponse> {
     const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
     const headers: Record<string, string> = {}
@@ -219,6 +290,67 @@ export class ContextAIService {
     }
 
     return { content: msg?.content || null, toolCalls: null }
+  }
+
+  private async respondOpenAIStream(
+    messages: any[],
+    tools: any[] | null,
+    config: LLMConfig,
+    onChunk: StreamChunk,
+  ): Promise<LLMResponse> {
+    const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
+    const headers: Record<string, string> = { "Content-Type": "application/json" }
+    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
+    const body: any = { model: config.model || "gpt-4o-mini", messages, stream: true, max_tokens: 4096 }
+    if (tools) body.tools = tools
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    const reader = resp.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    let fullContent = ""
+    let toolCalls: ToolCall[] | null = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      const lines = buffer.split("\n")
+      buffer = lines.pop() || ""
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || !trimmed.startsWith("data: ")) continue
+        const json = trimmed.slice(6)
+        if (json === "[DONE]") break
+        try {
+          const data = JSON.parse(json)
+          const delta = data.choices?.[0]?.delta
+          if (!delta) continue
+          if (delta.content) {
+            fullContent += delta.content
+            onChunk(delta.content)
+          }
+          if (delta.tool_calls) {
+            toolCalls = delta.tool_calls.map((tc: any) => ({
+              name: tc.function?.name,
+              arguments: typeof tc.function?.arguments === "string"
+                ? JSON.parse(tc.function.arguments)
+                : tc.function?.arguments,
+            }))
+          }
+        } catch { /* skip */ }
+      }
+    }
+
+    if (toolCalls) return { content: null, toolCalls }
+    return { content: fullContent, toolCalls: null }
   }
 
   private extractNodeContent(content: string): string | null {

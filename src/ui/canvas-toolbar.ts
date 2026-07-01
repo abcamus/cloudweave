@@ -195,11 +195,14 @@ export class CanvasToolbar {
     }
 
     const prompt = PRESET_PROMPTS[action]
-    this.card.showLoading()
+    this.card.showStreaming()
 
     try {
       const context = await this.aiService.buildContext(ids)
-      const answer = await this.aiService.queryLLM(context, prompt, this.config)
+      const answer = await this.aiService.queryLLM(
+        context, prompt, this.config,
+        (chunk) => this.card.appendStream(chunk),
+      )
       this.card.showResult(answer)
     } catch (e) {
       this.card.showError(e.message)
@@ -215,11 +218,14 @@ export class CanvasToolbar {
       return
     }
 
-    this.card.showLoading()
+    this.card.showStreaming()
 
     try {
       const context = await this.aiService.buildContext(ids)
-      const answer = await this.aiService.queryLLM(context, question, this.config)
+      const answer = await this.aiService.queryLLM(
+        context, question, this.config,
+        (chunk) => this.card.appendStream(chunk),
+      )
       this.card.showResult(answer)
     } catch (e) {
       this.card.showError(e.message)
