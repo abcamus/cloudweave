@@ -22,7 +22,7 @@ export default class ContextCanvasPlugin extends Plugin {
     initLocale()
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
-    this.aiService = new ContextAIService(this.app, this.canvasService, this.syncVault)
+    this.aiService = new ContextAIService(this.app, this.canvasService)
     this.insertCloudNodeCmd = new InsertCloudNodeCommand(this.app, this.canvasService, this.syncVault)
     this.timestampCmd = new TimestampCommand(this.app, this.canvasService)
     this.toolbar = new CanvasToolbar(this.app, this.canvasService, this.aiService)

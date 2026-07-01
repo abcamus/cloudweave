@@ -1,10 +1,44 @@
 import { App, requestUrl } from "obsidian"
-import { CloudNodeMeta, LLMConfig, CanvasAIContext, TimestampNote } from "../types"
+import { CloudNodeMeta, LLMConfig, CanvasAIContext } from "../types"
 import { CanvasService } from "./canvas-service"
-import { SyncVaultBridge } from "./sync-vault-bridge"
 import { SpatialSemanticEncoder } from "./spatial-semantic-encoder"
 
 const META_COMMENT_RE = /<!--\s*meta:\s*(\{.+?\})\s*-->/
+
+const SYSTEM_PROMPT = `你是一个 Canvas 画布助手。你可以分析画布上的节点内容、空间布局和连线关系。
+
+你可以使用以下工具：
+- read_file: 读取 vault 中指定文件的内容。当节点只提供了文件路径而没有具体内容时，你可以调用此工具来获取文件内容。`
+
+const TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "read_file",
+      description: "读取 vault 中指定文件的内容。传入文件的完整 vault 路径。",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "文件在 vault 中的相对路径，例如 Product/ContextCanvas PRD.md",
+          },
+        },
+        required: ["path"],
+      },
+    },
+  },
+]
+
+interface ToolCall {
+  name: string
+  arguments: Record<string, string>
+}
+
+interface LLMResponse {
+  content: string | null
+  toolCalls: ToolCall[] | null
+}
 
 export class ContextAIService {
   private spatialEncoder = new SpatialSemanticEncoder()
@@ -12,7 +46,6 @@ export class ContextAIService {
   constructor(
     private app: App,
     private canvasService: CanvasService,
-    private syncVault: SyncVaultBridge
   ) {}
 
   async buildContext(nodeIds: string[]): Promise<CanvasAIContext> {
@@ -58,25 +91,138 @@ export class ContextAIService {
   }
 
   async queryLLM(context: CanvasAIContext, question: string, config: LLMConfig): Promise<string> {
-    const prompt = this.buildPrompt(context, question)
+    const messages = this.buildMessages(context, question)
 
-    console.debug(`Prompt: ${prompt}`);
+    for (let round = 0; round < 5; round++) {
+      let response: LLMResponse
 
-    switch (config.provider) {
-      case "openai":
-        return this.queryOpenAI(prompt, config)
-      case "local":
-        return this.queryOllama(prompt, config)
-      case "gemini":
-        return this.queryGemini(prompt, config)
-      case "claude":
-        return this.queryClaude(prompt, config)
+      switch (config.provider) {
+        case "local":
+          response = await this.respondOllama(messages, TOOLS, config)
+          break
+        case "openai":
+          response = await this.respondOpenAI(messages, TOOLS, config)
+          break
+        default:
+          response = await this.respondOllama(messages, null, config)
+      }
+
+      if (response.toolCalls && response.toolCalls.length > 0) {
+        for (const call of response.toolCalls) {
+          console.debug('Tool call:', call);
+          const result = await this.executeTool(call)
+          messages.push({ role: "tool", name: call.name, content: result })
+        }
+        continue
+      }
+
+      return response.content || "（无响应）"
     }
+
+    return "（已达到最大工具调用轮次）"
+  }
+
+  private buildMessages(context: CanvasAIContext, question: string): any[] {
+    const contents = context.textContents
+      .map((t, i) => {
+        if (i === 0) return `--- 画布布局 ---\n${t}`
+        return `--- 节点 ${i} ---\n${t}`
+      })
+      .join("\n\n")
+
+    return [
+      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "user",
+        content: `以下是我 Canvas 画布上选中的 ${context.nodeIds.length} 个节点的内容及其空间布局信息：\n\n${contents}\n\n请基于以上内容回答：${question}`,
+      },
+    ]
+  }
+
+  private async executeTool(call: ToolCall): Promise<string> {
+    switch (call.name) {
+      case "read_file": {
+        const path = call.arguments.path
+        if (!path) return "错误: 缺少 path 参数"
+        const file = this.app.vault.getFileByPath(path)
+        if (!file) return `错误: 文件不存在: ${path}`
+        const content = await this.app.vault.read(file)
+        return content.slice(0, 5000)
+      }
+      default:
+        return `错误: 未知工具: ${call.name}`
+    }
+  }
+
+  private async respondOllama(messages: any[], tools: any[] | null, config: LLMConfig): Promise<LLMResponse> {
+    const url = config.endpoint || "http://localhost:11434/api/chat"
+    const body: any = {
+      model: config.model || "qwen2",
+      messages,
+      stream: false,
+      options: { num_predict: 4096 },
+    }
+    if (tools) body.tools = tools
+
+    const resp = await requestUrl({
+      url,
+      method: "POST",
+      contentType: "application/json",
+      body: JSON.stringify(body),
+    })
+
+    const msg = resp.json.message
+
+    if (msg.tool_calls) {
+      return {
+        content: null,
+        toolCalls: msg.tool_calls.map((tc: any) => ({
+          name: tc.function.name,
+          arguments: typeof tc.function.arguments === "string"
+            ? JSON.parse(tc.function.arguments)
+            : tc.function.arguments,
+        })),
+      }
+    }
+
+    return { content: msg.content, toolCalls: null }
+  }
+
+  private async respondOpenAI(messages: any[], tools: any[] | null, config: LLMConfig): Promise<LLMResponse> {
+    const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
+    const headers: Record<string, string> = {}
+    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
+    const body: any = { model: config.model || "gpt-4o-mini", messages, max_tokens: 4096 }
+    if (tools) body.tools = tools
+
+    const resp = await requestUrl({
+      url,
+      method: "POST",
+      contentType: "application/json",
+      headers,
+      body: JSON.stringify(body),
+    })
+
+    const choice = resp.json.choices?.[0]
+    const msg = choice?.message
+
+    if (msg?.tool_calls) {
+      return {
+        content: null,
+        toolCalls: msg.tool_calls.map((tc: any) => ({
+          name: tc.function.name,
+          arguments: typeof tc.function.arguments === "string"
+            ? JSON.parse(tc.function.arguments)
+            : tc.function.arguments,
+        })),
+      }
+    }
+
+    return { content: msg?.content || null, toolCalls: null }
   }
 
   private extractNodeContent(content: string): string | null {
     const meta = this.parseMeta(content)
-
     if (meta) {
       const icons: Record<string, string> = {
         image: "[Image",
@@ -87,7 +233,6 @@ export class ContextAIService {
       const prefix = icons[meta.category] || "[File"
       return `${prefix}: ${meta.fileName}]`
     }
-
     const clean = content.replace(META_COMMENT_RE, "").trim()
     return clean || null
   }
@@ -100,92 +245,5 @@ export class ContextAIService {
     } catch {
       return null
     }
-  }
-
-  private buildPrompt(context: CanvasAIContext, question: string): string {
-    const contents = context.textContents
-      .map((t, i) => {
-        if (i === 0) return `--- 画布布局 ---\n${t}`
-        return `--- 节点 ${i} ---\n${t}`
-      })
-      .join("\n\n")
-
-    return `以下是我 Canvas 画布上选中的 ${context.nodeIds.length} 个节点的内容及其空间布局信息：\n\n${contents}\n\n请基于以上内容（包括空间布局）回答：${question}`
-  }
-
-  private async queryOpenAI(prompt: string, config: LLMConfig): Promise<string> {
-    const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
-    const headers: Record<string, string> = {}
-    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
-
-    const resp = await requestUrl({
-      url,
-      method: "POST",
-      contentType: "application/json",
-      headers,
-      body: JSON.stringify({
-        model: config.model || "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 4096,
-      }),
-    })
-
-    return resp.json.choices?.[0]?.message?.content || "（无响应）"
-  }
-
-  private async queryOllama(prompt: string, config: LLMConfig): Promise<string> {
-    const url = config.endpoint || "http://localhost:11434/api/chat"
-
-    console.log("[Context Canvas] Ollama request URL:", url, "model:", config.model)
-
-    try {
-      const resp = await requestUrl({
-        url,
-        method: "POST",
-        contentType: "application/json",
-        body: JSON.stringify({
-          model: config.model || "qwen2",
-          messages: [{ role: "user", content: prompt }],
-          stream: false,
-          options: { num_predict: 4096 },
-        }),
-      })
-
-      return resp.json.message?.content || "（无响应）"
-    } catch (e) {
-      console.error("[Context Canvas] Ollama error:", e)
-      throw e
-    }
-  }
-
-  private async queryGemini(prompt: string, config: LLMConfig): Promise<string> {
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${config.model || "gemini-2.0-flash"}:generateContent?key=${config.apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      }
-    )
-    const data = await resp.json()
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "（无响应）"
-  }
-
-  private async queryClaude(prompt: string, config: LLMConfig): Promise<string> {
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": config.apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: config.model || "claude-3-haiku-20240307",
-        max_tokens: 4096,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    })
-    const data = await resp.json()
-    return data.content?.[0]?.text || "（无响应）"
   }
 }
