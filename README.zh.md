@@ -2,6 +2,8 @@
 
 **将云盘文件编织进 Obsidian Canvas。**
 
+[English](README.md) · [中文](README.zh.md)
+
 在 Canvas 中浏览和插入云盘文件，AI 能理解云盘内容和本地笔记，一并分析。
 
 ![效果图](asset/demo.png)

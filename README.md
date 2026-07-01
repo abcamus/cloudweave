@@ -2,6 +2,8 @@
 
 **Cloud-storage files woven into Obsidian Canvas.**
 
+[中文](README.zh.md) · [English](README.md)
+
 Browse and insert cloud storage files into Canvas — AI understands both cloud files and local notes together.
 
 ![Screenshot](asset/demo.png)
