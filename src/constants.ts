@@ -1,4 +1,4 @@
-export const PLUGIN_ID = "context-canvas"
+export const PLUGIN_ID = "cloudweave"
 export const SYNC_VAULT_PLUGIN_ID = "sync-vault-ce"
 export const CANVAS_VIEW_TYPE = "canvas"
 

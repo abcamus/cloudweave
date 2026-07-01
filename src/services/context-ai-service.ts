@@ -16,6 +16,7 @@ interface LLMMessage {
   role: string
   content: string
   name?: string
+  tool_call_id?: string
 }
 
 interface LLMToolDef {
@@ -28,6 +29,7 @@ interface LLMToolDef {
 }
 
 interface ToolCallRaw {
+  id?: string
   function: {
     name: string
     arguments: string | Record<string, string>
@@ -81,6 +83,7 @@ const TOOLS: LLMToolDef[] = [
 ]
 
 interface ToolCall {
+  id?: string
   name: string
   arguments: Record<string, string>
 }
@@ -94,6 +97,7 @@ type StreamChunk = (text: string) => void
 
 function parseToolCallsFromRaw(raw: ToolCallRaw[]): ToolCall[] {
   return raw.map(tc => ({
+    id: tc.id,
     name: tc.function.name,
     arguments: typeof tc.function.arguments === "string"
       ? JSON.parse(tc.function.arguments) as Record<string, string>
@@ -140,7 +144,7 @@ export class ContextAIService {
 
       const meta = this.parseMeta(content)
       if (meta?.cloudType && meta?.filePath) {
-        textContents.push(`[${label}] 云盘文件: ${meta.fileName} (${meta.cloudType}) 路径: ${meta.filePath}（可使用 read_cloud_file 工具读取内容）`)
+        textContents.push(`[${label}] 云盘文件: ${meta.fileName}（${meta.cloudType}）路径: ${meta.filePath}。请调用 read_cloud_file 工具读取该文件内容，参数 cloudType="${meta.cloudType}"，path="${meta.filePath}"`)
         continue
       }
 
@@ -187,7 +191,9 @@ export class ContextAIService {
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const call of response.toolCalls) {
           const result = await this.executeTool(call)
-          messages.push({ role: "tool", name: call.name, content: result })
+          const toolMsg: LLMMessage = { role: "tool", content: result }
+          if (call.id) toolMsg.tool_call_id = call.id
+          messages.push(toolMsg)
         }
         continue
       }

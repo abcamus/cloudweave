@@ -7,12 +7,11 @@ import { SyncVaultBridge } from "../services/sync-vault-bridge"
 import { CloudNodeService } from "../services/cloud-node-service"
 import { CloudFilePickerModal } from "./cloud-file-picker"
 import { LLMConfig } from "../types"
-import { FloatingCard } from "./floating-card"
 
 const PRESET_PROMPTS: Record<string, string> = {
-  explain: "请解释选中的这些节点内容，并结合它们在画布上的空间排布和连线关系说明整体结构。",
-  summarize: "请总结选中的这些节点的核心内容，提取关键信息。",
-  relate: "请分析选中的这些节点之间的关联关系，包括空间位置关系、连线关系以及内容层面的联系。",
+  explain: "解释以下节点内容，结合画布上的空间排布和连线关系简要说明整体结构。直接回答，不要使用\"根据您提供的信息\"\"我们可以得知\"等套话，不要总结你自己的分析过程。",
+  summarize: "总结以下节点的核心内容，提取关键信息。直接回答，不要使用套话，不要总结你自己的分析过程。",
+  relate: "分析以下节点之间的关联关系，包括空间位置关系、连线关系以及内容层面的联系。直接回答，不要使用套话，不要总结你自己的分析过程。",
 }
 
 const CC_MENU_MARKER = "cc-ai-menu-items"
@@ -26,7 +25,6 @@ export class CanvasToolbar {
   private pollInterval: number
   private currentSelection: string[] = []
   private config: LLMConfig
-  private card: FloatingCard
 
   constructor(
     private app: App,
@@ -35,7 +33,6 @@ export class CanvasToolbar {
     private syncVault: SyncVaultBridge,
   ) {
     this.config = this.loadConfig()
-    this.card = new FloatingCard(this.app, document.body)
     this.buildPopover()
     this.startPolling()
   }
@@ -140,7 +137,6 @@ export class CanvasToolbar {
 
     this.currentSelection = ids
     this.injectItems(menuEl)
-    this.card.setAnchor(menuEl)
   }
 
   private hideUI() {
@@ -206,7 +202,7 @@ export class CanvasToolbar {
     }
   }
 
-  private handleAction(action: string) {
+  handleAction(action: string) {
     if (action === "explain" || action === "summarize" || action === "relate") {
       this.runPreset(action)
     } else if (action === "ask") {
@@ -253,15 +249,23 @@ export class CanvasToolbar {
       return
     }
 
-    const prompt = PRESET_PROMPTS[action]
-    this.card.showLoading()
+    const edgeLabels: Record<string, string> = {
+      explain: "解释",
+      summarize: "总结",
+      relate: "关联",
+    }
+    const edgeLabel = edgeLabels[action] || action
+
+    const nodeId = await this.createAIReplyNode(edgeLabel, ids)
+    if (!nodeId) return
 
     try {
+      const prompt = PRESET_PROMPTS[action]
       const context = await this.aiService.buildContext(ids)
       const answer = await this.aiService.queryLLM(context, prompt, this.config)
-      this.card.showResult(answer)
+      await this.updateAINodeContent(nodeId, answer)
     } catch (e) {
-      this.card.showError(e.message)
+      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e.message)}`)
     }
   }
 
@@ -274,18 +278,65 @@ export class CanvasToolbar {
       return
     }
 
-    this.card.showStreaming()
+    const truncatedLabel = question.length > 20 ? question.slice(0, 20) + "…" : question
+    const nodeId = await this.createAIReplyNode(truncatedLabel, ids)
+    if (!nodeId) return
 
     try {
       const context = await this.aiService.buildContext(ids)
-      const answer = await this.aiService.queryLLM(
-        context, question, this.config,
-        (chunk) => this.card.appendStream(chunk),
-      )
-      this.card.showResult(answer)
+      const answer = await this.aiService.queryLLM(context, question, this.config)
+      await this.updateAINodeContent(nodeId, answer)
     } catch (e) {
-      this.card.showError(e.message)
+      await this.updateAINodeContent(nodeId, `❌ ${t("aiError", e.message)}`)
     }
+  }
+
+  private async createAIReplyNode(edgeLabel: string, sourceIds: string[]): Promise<string | null> {
+    const data = await this.canvasService.getData()
+    if (!data) return null
+
+    const nodeId = `ai-result-${Date.now()}`
+    const sourceNodes = data.nodes.filter(n => sourceIds.includes(n.id))
+    if (sourceNodes.length === 0) return null
+
+    const avgX = sourceNodes.reduce((sum, n) => sum + n.x, 0) / sourceNodes.length
+    const maxY = Math.max(...sourceNodes.map(n => n.y + n.height))
+
+    data.nodes.push({
+      id: nodeId,
+      x: avgX,
+      y: maxY + 40,
+      width: 320,
+      height: 80,
+      type: "text",
+      text: "⏳ Thinking...",
+      color: "6",
+    })
+
+    for (const sourceId of sourceIds) {
+      data.edges.push({
+        id: `edge-${sourceId}-${nodeId}`,
+        fromNode: sourceId,
+        toNode: nodeId,
+        label: edgeLabel,
+      })
+    }
+
+    await this.canvasService.setData(data)
+    return nodeId
+  }
+
+  private async updateAINodeContent(nodeId: string, content: string) {
+    const data = await this.canvasService.getData()
+    if (!data) return
+
+    const node = data.nodes.find(n => n.id === nodeId)
+    if (!node) return
+
+    node.text = content
+    node.height = Math.max(80, Math.min(600, Math.ceil(content.length / 80) * 24))
+
+    await this.canvasService.setData(data)
   }
 
   refreshConfig() {
@@ -304,7 +355,6 @@ export class CanvasToolbar {
 
   unmount() {
     window.clearInterval(this.pollInterval)
-    this.card.unmount()
     this.inputPopover.remove()
   }
 }

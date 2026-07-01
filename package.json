@@ -1,7 +1,7 @@
 {
-  "name": "context-canvas",
+  "name": "cloudweave",
   "version": "0.1.0",
-  "description": "让 Canvas 成为 AI 上下文 — 支持云盘媒体节点 + 时间戳笔记 + AI 问答",
+  "description": "Cloud-storage file nodes + AI analysis for Obsidian Canvas.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
@@ -9,14 +9,19 @@
     "lint": "eslint src/",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf main.js manifest.json styles.css",
-    "deploy": "cp main.js manifest.json styles.css '/Users/abcamus/obsidian仓库/AI库/.obsidian/plugins/context-canvas/'"
+    "deploy": "cp main.js manifest.json styles.css /Users/abcamus/obsidian仓库/AI库/.obsidian/plugins/cloudweave/"
   },
   "keywords": [
     "obsidian",
     "canvas",
-    "plugin"
+    "plugin",
+    "cloud-storage",
+    "aliyun",
+    "baidu",
+    "quark",
+    "onedrive"
   ],
-  "author": "sync-vault",
+  "author": "Camus Qiu",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",

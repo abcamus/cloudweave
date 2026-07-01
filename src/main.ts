@@ -27,6 +27,7 @@ export default class ContextCanvasPlugin extends Plugin {
   private toolbar: CanvasToolbar | null = null
   private menuObserver: MutationObserver | null = null
   private isCanvasBgContextMenu = false
+  private isCanvasNodeContextMenu = false
 
   async onload() {
     initLocale()
@@ -65,21 +66,25 @@ export default class ContextCanvasPlugin extends Plugin {
       const inCanvas = !!target.closest(".canvas-wrapper")
       const onNode = !!target.closest(".canvas-node")
       this.isCanvasBgContextMenu = inCanvas && !onNode
+      this.isCanvasNodeContextMenu = inCanvas && onNode
     }, true)
 
     this.menuObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type !== "childList") continue
-        if (!this.isCanvasBgContextMenu) continue
+        if (!this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu) continue
         for (let i = 0; i < mutation.addedNodes.length; i++) {
           const el = mutation.addedNodes[i] as HTMLElement
           if (el.nodeType !== Node.ELEMENT_NODE) continue
           if (el.matches?.(".menu")) {
-            this.injectMenuItem(el)
+            if (this.isCanvasBgContextMenu) this.injectMenuItem(el)
+            if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(el)
           } else {
             const menus = el.querySelectorAll(".menu")
             for (let j = 0; j < menus.length; j++) {
-              this.injectMenuItem(menus[j] as HTMLElement)
+              const menu = menus[j] as HTMLElement
+              if (this.isCanvasBgContextMenu) this.injectMenuItem(menu)
+              if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(menu)
             }
           }
         }
@@ -118,6 +123,46 @@ export default class ContextCanvasPlugin extends Plugin {
     item.appendChild(titleEl)
 
     group.appendChild(item)
+  }
+
+  private injectAINodeMenuItems(menu: HTMLElement) {
+    if (menu.querySelector(".cc-ai-menu-item")) return
+
+    const scroll = menu.querySelector(".menu-scroll")
+    if (!scroll) return
+
+    const actions = [
+      { action: "explain", icon: "search", label: t("aiExplain") },
+      { action: "summarize", icon: "list", label: t("aiSummarize") },
+      { action: "relate", icon: "git-branch", label: t("aiRelate") },
+      { action: "ask", icon: "message-square", label: "Ask" },
+    ]
+
+    const separator = createDiv({ cls: "menu-separator" })
+    scroll.appendChild(separator)
+
+    const group = createDiv({ cls: "menu-group" })
+    scroll.appendChild(group)
+
+    for (const cfg of actions) {
+      const item = createDiv({ cls: "menu-item tappable cc-ai-menu-item" })
+      item.dataset.section = "cc-ai"
+      item.onClickEvent(() => {
+        void (menu as MenuEl).hide?.()
+        this.toolbar?.handleAction(cfg.action)
+      })
+      item.onmouseenter = () => item.addClass("selected")
+      item.onmouseleave = () => item.removeClass("selected")
+
+      const icon = createSpan({ cls: "menu-item-icon" })
+      setIcon(icon, cfg.icon)
+      item.appendChild(icon)
+
+      const titleEl = createSpan({ cls: "menu-item-title", text: cfg.label })
+      item.appendChild(titleEl)
+
+      group.appendChild(item)
+    }
   }
 
   private registerCodeMirrorProtocol() {

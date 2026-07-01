@@ -1,99 +1,93 @@
-# Context Canvas
+# CloudWeave
 
-**让 Obsidian Canvas 成为云端知识上下文容器。**
+**Cloud-storage files woven into Obsidian Canvas.**
 
-把云盘上的视频、音频、图片、PDF 拖入画布，在 Canvas 里直接预览，然后基于整个画布的内容与 AI 对话。
-
----
-
-## 核心功能
-
-### ☁️ 云盘节点
-右键 Canvas → 从云盘插入 → 浏览阿里云盘/百度网盘/夸克网盘文件 → 自动创建节点。
-
-- **图片**：通过 Sync Vault 后处理器自动渲染缩略图
-- **视频/音频**：生成 cloud-link 节点，后续支持内嵌播放
-- **PDF/其他**：文件节点，带来源标签
-
-### 🕒 时间戳笔记
-在笔记中记录视频/音频时间戳，点击即可跳转到 Canvas 对应节点。
-
-- 快捷键 `Cmd+Shift+Space` 记录时间戳
-- 格式 `cc-timestamp://nodeId/seconds`
-- 点击自动定位到 Canvas 节点
-
-### 🤖 AI 问答面板
-选中 Canvas 节点作为上下文，向 AI 提问。
-
-- 支持 OpenAI / Gemini / Claude
-- 自动聚合节点元数据作为上下文
-- 不离开 Canvas 界面即可问答
-
-### 🌐 国际化
-自动跟随 Obsidian 界面语言（中文 / English）。
+Browse and insert cloud storage files into Canvas — AI understands both cloud files and local notes together.
 
 ---
 
-## 前置依赖
+## Key Features
 
-- **[Sync Vault](https://github.com/abcamus/sync-vault-ce)** 插件（云盘引擎）
-- 在 Sync Vault 设置中启用 **AI → MCP Server**
-- Obsidian v1.5+（Canvas 功能）
+### ☁️ Cloud File Integration
+Browse and insert files from Aliyun, Baidu, Quark, and OneDrive directly into Canvas — without leaving Obsidian.
+
+- **Insert**: Bottom toolbar button or canvas background context menu
+- **Track**: Each node records cloud source and path, always traceable
+- **Read**: AI can read cloud file content (PDF, text, code, etc.) on demand via `read_cloud_file` tool
+
+### 🤖 AI-Powered Analysis
+Select Canvas nodes (local notes + cloud files) and ask AI to analyze them together.
+
+- **Presets**: Summarize, Explain, Find Relations
+- **Custom Q&A**: Ask anything about selected nodes
+- **Context-aware**: AI understands node layout, connections, and colors
+- **Supports**: OpenAI / Gemini / Claude / Ollama
+
+### 🕒 Video/Audio Timestamp
+Mark timestamps in notes and jump to corresponding Canvas nodes.
+
+- Shortcut `Cmd+Shift+Space`
+- Click to navigate to the Canvas node at the exact second
 
 ---
 
-## 安装
+## Prerequisites
 
-1. 将 `main.js`、`manifest.json`、`styles.css` 复制到 `.obsidian/plugins/context-canvas/`
-2. 在 Obsidian 设置 → 第三方插件中启用 **Context Canvas**
-3. 打开一个 Canvas 文件 → 右键 → 从云盘插入
+- **[Sync Vault](https://github.com/abcamus/sync-vault-ce)** plugin (cloud storage engine)
+- Enable **AI → MCP Server** in Sync Vault settings
+- Obsidian v1.5+ (Canvas feature)
 
 ---
 
-## 开发
+## Installation
+
+1. Copy `main.js`, `manifest.json`, `styles.css` to `.obsidian/plugins/cloudweave/`
+2. Enable **CloudWeave** in Obsidian Settings → Community Plugins
+3. Open a Canvas file → Right-click → Insert from cloud storage
+
+---
+
+## Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 开发构建（监听）
+# Dev build (watch)
 pnpm run dev
 
-# 生产构建
+# Production build
 pnpm run build
 
-# 部署到 vault
+# Deploy to vault
 pnpm run deploy
 ```
 
 ---
 
-## 路线图
+## Roadmap
 
-| Phase | 功能 | 状态 |
-|-------|------|------|
-| P0 | 云盘节点 + 文件选择器 | ✅ 图片可用，视频/PDF 降级显示 |
-| P1 | 视频/音频播放 + 时间戳 | ✅ 时间戳系统，⏳ 内嵌播放器 |
-| P2 | AI 问答面板 | ✅ 基础问答，⏳ STT/Vision/PDF 提取 |
-| P3 | MCP 上下文导出 | ⏳ 未开始 |
-| P4 | 性能优化 + 缓存 | ⏳ 未开始 |
+- **[P0] Cloud file insertion + AI Q&A** ✅
+- **[P1] Audio transcription** — Transcribe cloud audio/video via AI
+- **[P2] Web search** — AI can search the web as context
+- **[P3] Advanced AI workflow** — Custom prompts, multi-turn, tool composition
 
 ---
 
-## 技术架构
+## Architecture
 
 ```
 Obsidian
-├── Context Canvas 插件
-│   ├── 云盘节点（cloud-link + JSON meta）
-│   ├── 时间戳系统
-│   └── AI 问答面板
-└── Sync Vault 插件
-    └── MCP Server（云盘引擎：阿里/百度/夸克）
+├── CloudWeave Plugin
+│   ├── Cloud node (cloud-link + JSON meta)
+│   ├── Timestamp system
+│   └── AI Q&A panel
+└── Sync Vault Plugin
+    └── MCP Server (Aliyun / Baidu / Quark / OneDrive)
 ```
 
 ---
 
-## 许可
+## License
 
 MIT

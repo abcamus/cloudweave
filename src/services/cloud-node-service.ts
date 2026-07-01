@@ -19,9 +19,15 @@ export class CloudNodeService {
     const content = this.buildContent(file, category)
     const nodeId = `cloud-${file.cloudType}-${file.fsid}-${Date.now()}`
     const color = CLOUD_NODE_COLORS[category] || "1"
-    const label = this.buildNodeLabel(file, category)
+    const label = file.name.replace(/\.[^.]+$/, "")
 
-    await this.canvasService.addCloudNode(nodeId, label, content, color)
+    const isWide = category === "video" || category === "audio"
+    await this.canvasService.addCloudNode(
+      nodeId, label, content, color,
+      undefined,
+      isWide ? 320 : 220,
+      isWide ? 200 : 300,
+    )
     new Notice(t("inserted", file.name))
   }
 
@@ -58,25 +64,42 @@ export class CloudNodeService {
     }
 
     const cloudLink = `obsidian://cloud-link?type=${file.cloudType}&id=${file.fsid}&cloudpath=${encodeURIComponent(file.path)}`
+    const icon = this.getCategoryIcon(category)
+    const cloudLabel = this.getCloudLabel(file.cloudType)
+    const sizeLabel = this.formatSize(file.size)
 
     let display: string
-    if (category === "video" || category === "audio") {
-      display = `\`\`\`cloudvideo\n${file.cloudType}://${file.path} | ${file.name}\n\`\`\``
-    } else if (category === "image") {
-      display = `![](${cloudLink})`
-    } else if (category === "pdf") {
-      display = `📄 [${file.name}](${cloudLink})`
+    if (category === "image" || category === "pdf") {
+      display = `![](${cloudLink})\n\n_${file.name} · ${cloudLabel}_`
+    } else if (category === "video") {
+      display = [
+        `\`\`\`cloudvideo\n${file.cloudType}://${file.path} | ${file.name}\n\`\`\``,
+        `### 🎬 ${file.name.replace(/\.[^.]+$/, "")}`,
+        `\`${cloudLabel}\` \`${sizeLabel}\``,
+      ].join("\n\n")
+    } else if (category === "audio") {
+      display = [
+        `# 🎧 ${file.name.replace(/\.[^.]+$/, "")}`,
+        `\`${cloudLabel}\` \`${sizeLabel}\``,
+        `---`,
+        `▶️ [${t("openFile")}](${cloudLink})`,
+      ].join("\n")
     } else {
-      display = `📎 [${file.name}](${cloudLink})`
+      display = [
+        `${icon} ${file.name}`,
+        `${cloudLabel} · ${sizeLabel}`,
+        `[${t("openFile")}](${cloudLink})`,
+      ].join("\n")
     }
 
     return `${display}\n\n<!-- meta:${JSON.stringify(meta)} -->`
   }
 
-  private buildNodeLabel(file: CloudFileEntry, category: CloudFileCategory): string {
-    const cloudLabel = this.getCloudLabel(file.cloudType)
-    const icon = this.getCategoryIcon(category)
-    return `${icon} ${file.name} · ${cloudLabel}`
+  private formatSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
   }
 
   private getCloudLabel(type: CloudDiskType): string {
