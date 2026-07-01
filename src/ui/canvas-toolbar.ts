@@ -92,7 +92,7 @@ export class CanvasToolbar {
     if (!view || view.getViewType() !== CANVAS_VIEW_TYPE) return null
     const container = view.contentEl || view.containerEl
     if (!container) return null
-    return container.querySelector(".canvas-card-menu") as HTMLElement | null
+    return container.querySelector(".canvas-menu") as HTMLElement | null
   }
 
   private poll() {
@@ -140,8 +140,8 @@ export class CanvasToolbar {
     ]
 
     for (const cfg of btns) {
-      const btn = wrapper.createEl("div", {
-        cls: "canvas-card-menu-button mod-draggable",
+      const btn = wrapper.createEl("button", {
+        cls: "clickable-icon",
         attr: { "aria-label": cfg.label, "data-tooltip-position": "top" },
       })
       setIcon(btn, cfg.icon)
@@ -197,14 +197,11 @@ export class CanvasToolbar {
     }
 
     const prompt = PRESET_PROMPTS[action]
-    this.card.showStreaming()
+    this.card.showLoading()
 
     try {
       const context = await this.aiService.buildContext(ids)
-      const answer = await this.aiService.queryLLM(
-        context, prompt, this.config,
-        (chunk) => this.card.appendStream(chunk),
-      )
+      const answer = await this.aiService.queryLLM(context, prompt, this.config)
       this.card.showResult(answer)
     } catch (e) {
       this.card.showError(e.message)

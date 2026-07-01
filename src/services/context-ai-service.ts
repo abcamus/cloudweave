@@ -28,7 +28,7 @@ interface LLMToolDef {
 interface ToolCallRaw {
   function: {
     name: string
-    arguments: string
+    arguments: string | Record<string, string>
   }
 }
 
@@ -67,7 +67,9 @@ type StreamChunk = (text: string) => void
 function parseToolCallsFromRaw(raw: ToolCallRaw[]): ToolCall[] {
   return raw.map(tc => ({
     name: tc.function.name,
-    arguments: JSON.parse(tc.function.arguments) as Record<string, string>,
+    arguments: typeof tc.function.arguments === "string"
+      ? JSON.parse(tc.function.arguments) as Record<string, string>
+      : tc.function.arguments,
   }))
 }
 
@@ -155,7 +157,7 @@ export class ContextAIService {
         continue
       }
 
-      return response.content || "（无响应）"
+      return response.content ?? "（无响应）"
     }
 
     return "（已达到最大工具调用轮次）"
@@ -260,7 +262,6 @@ export class ContextAIService {
         if (!trimmed) continue
         try {
           const data = JSON.parse(trimmed) as { done?: boolean; message?: { content?: string; tool_calls?: ToolCallRaw[] } }
-          if (data.done) break
           if (data.message?.content) {
             fullContent += data.message.content
             onChunk(data.message.content)
@@ -268,6 +269,7 @@ export class ContextAIService {
           if (data.message?.tool_calls) {
             toolCalls = parseToolCallsFromRaw(data.message.tool_calls)
           }
+          if (data.done) break
         } catch { /* skip malformed lines */ }
       }
     }

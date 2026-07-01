@@ -8,8 +8,7 @@ export class FloatingCard {
   private renderComp: Component | null = null
   private streamingText = ""
   private copyBtn: HTMLElement
-  private streamTimer: number | null = null
-  private isRendered = false
+  private streamPos: { left: string; top: string } | null = null
 
   constructor(
     private app: App,
@@ -70,11 +69,7 @@ export class FloatingCard {
     this.contentEl.removeClass("cc-floating-card-loading")
     this.contentEl.removeClass("cc-floating-card-error")
     this.streamingText = ""
-    this.isRendered = false
-    if (this.streamTimer) {
-      clearTimeout(this.streamTimer)
-      this.streamTimer = null
-    }
+    this.streamPos = null
     this.position()
     this.container.show()
   }
@@ -83,30 +78,9 @@ export class FloatingCard {
     this.streamingText += chunk
     this.contentEl.setText(this.streamingText)
     this.contentEl.scrollTop = this.contentEl.scrollHeight
-    this.position()
-
-    if (this.streamTimer) clearTimeout(this.streamTimer)
-    this.streamTimer = window.setTimeout(() => this.renderStreamMd(), 400)
-  }
-
-  private async renderStreamMd() {
-    const text = this.streamingText
-    if (!text.trim()) return
-
-    this.renderComp?.unload()
-    this.contentEl.empty()
-    this.renderComp = new Component()
-    await MarkdownRenderer.render(this.app, text, this.contentEl, "", this.renderComp)
-    this.contentEl.scrollTop = this.contentEl.scrollHeight
-    this.position()
-    this.isRendered = true
   }
 
   async showResult(text: string) {
-    if (this.streamTimer) {
-      clearTimeout(this.streamTimer)
-      this.streamTimer = null
-    }
     this.renderComp?.unload()
     this.contentEl.removeClass("cc-floating-card-loading")
     this.contentEl.removeClass("cc-floating-card-error")
@@ -117,7 +91,6 @@ export class FloatingCard {
     this.contentEl.scrollTop = 0
     this.position()
     this.container.show()
-    this.isRendered = false
   }
 
   showError(message: string) {
@@ -136,6 +109,12 @@ export class FloatingCard {
   }
 
   private position() {
+    if (this.streamPos) {
+      this.container.style.left = this.streamPos.left
+      this.container.style.top = this.streamPos.top
+      return
+    }
+
     const anchorRect = this._anchor.getBoundingClientRect()
     const cardW = 420
     const cardH = this.container.offsetHeight || 240
@@ -152,12 +131,12 @@ export class FloatingCard {
     }
     if (top < gap) top = gap
 
-    this.container.style.left = `${left}px`
-    this.container.style.top = `${top}px`
+    this.streamPos = { left: `${left}px`, top: `${top}px` }
+    this.container.style.left = this.streamPos.left
+    this.container.style.top = this.streamPos.top
   }
 
   unmount() {
-    if (this.streamTimer) clearTimeout(this.streamTimer)
     this.renderComp?.unload()
     this.container.remove()
   }
