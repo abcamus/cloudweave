@@ -1,6 +1,8 @@
 import { App, ItemView } from "obsidian"
-import { Canvas, CanvasData, CanvasNode, CanvasNodeElement } from "../types"
+import { Canvas, CanvasData } from "../types"
 import { CANVAS_VIEW_TYPE } from "../constants"
+
+type CanvasView = ItemView & { canvas?: Canvas }
 
 export class CanvasService {
   private activeCanvas: Canvas | null = null
@@ -10,7 +12,7 @@ export class CanvasService {
   refresh() {
     const view = this.app.workspace.getActiveViewOfType(ItemView)
     if (view?.getViewType() === CANVAS_VIEW_TYPE) {
-      this.activeCanvas = (view as any).canvas as Canvas
+      this.activeCanvas = (view as CanvasView).canvas ?? null
     } else {
       this.activeCanvas = null
     }
@@ -34,22 +36,11 @@ export class CanvasService {
   }
 
   getSelectedNodeIds(): string[] {
-    // Try API: canvas.selection might be a Set/Array of node objects with .id
     const canvas = this.getCanvas()
-    if (canvas) {
-      const sel = (canvas as any).selection
-      if (sel && typeof sel[Symbol.iterator] === "function") {
-        const arr = Array.from(sel)
-        if (arr.length > 0 && typeof arr[0] === "object" && (arr[0] as any)?.id) {
-          return arr.map((n: any) => n.id)
-        }
-        if (arr.length > 0 && typeof arr[0] === "string") {
-          return arr as string[]
-        }
-      }
+    if (canvas?.selection) {
+      return Array.from(canvas.selection, n => n.id)
     }
 
-    // Fallback: use DOM
     return Array.from(document.querySelectorAll(".canvas-node.is-selected"))
       .map(el => el.getAttribute("data-id") || el.id)
       .filter(Boolean)

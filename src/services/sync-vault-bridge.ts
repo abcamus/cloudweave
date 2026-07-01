@@ -1,8 +1,26 @@
-import { Notice, requestUrl } from "obsidian"
+import { requestUrl } from "obsidian"
 import { t } from "../i18n"
 import { CloudFileEntry, CloudDiskType, CloudFileCategory } from "../types"
 
 const TIMEOUT = 5000
+
+interface RawCloudEntry {
+  path?: string
+  name?: string
+  isFolder?: boolean
+  type?: string
+  id?: string
+  fsid?: string
+  size?: number
+  modified?: string | number | Date
+}
+
+interface MCPResult {
+  files?: RawCloudEntry[]
+  pagination?: { total?: number }
+  tools?: Array<{ name: string }>
+  content?: Array<{ type: string; text: string }>
+}
 
 export class SyncVaultBridge {
   private endpoint = "http://127.0.0.1:3002/message"
@@ -23,7 +41,7 @@ export class SyncVaultBridge {
     const data = this.parse(mcpResp)
     if (!data?.files) return { files: [], total: 0 }
     return {
-      files: data.files.map((f: any) => this.mapEntry(f, cloudType)),
+      files: data.files.map(f => this.mapEntry(f, cloudType)),
       total: data.pagination?.total ?? data.files.length,
     }
   }
@@ -37,7 +55,7 @@ export class SyncVaultBridge {
     const mcpResp = await this.post("search_cloud_files", { query, cloudType, limit, offset })
     const data = this.parse(mcpResp)
     if (!data?.files) return []
-    return data.files.map((f: any) => this.mapEntry(f, cloudType))
+    return data.files.map(f => this.mapEntry(f, cloudType))
   }
 
   getCategory(file: CloudFileEntry): CloudFileCategory {
@@ -57,7 +75,7 @@ export class SyncVaultBridge {
     return undefined
   }
 
-  private async post(method: string, args: any): Promise<any> {
+  private async post(method: string, args: Record<string, unknown>): Promise<MCPResult> {
     const body = JSON.stringify({
       jsonrpc: "2.0",
       id: Date.now(),
@@ -65,45 +83,10 @@ export class SyncVaultBridge {
       params: { name: method, arguments: args },
     })
 
-    console.debug(`[ContextCanvas] POST ${method}`, args)
-
-    // try {
-    //   const result = await this.postFetch(this.endpoint, body)
-    //   console.debug(`[ContextCanvas] fetch OK ${method}`, result)
-    //   return result
-    // } catch (fetchErr) {
-    //   console.debug(`[ContextCanvas] fetch failed, trying requestUrl:`, fetchErr)
-    const result = await this.postRequestUrl(this.endpoint, body)
-    console.debug(`[ContextCanvas] requestUrl OK ${method}`, result)
-    return result
-    // }
+    return this.postRequestUrl(this.endpoint, body)
   }
 
-  private async postFetch(url: string, body: string): Promise<any> {
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), TIMEOUT)
-
-    try {
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body,
-        signal: controller.signal,
-      })
-
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-
-      const json = await resp.json()
-      if (json?.error) throw new Error(json.error.message)
-      if (!json?.result) throw new Error("MCP 返回空")
-
-      return json.result
-    } finally {
-      window.clearTimeout(timer)
-    }
-  }
-
-  private async postRequestUrl(url: string, body: string): Promise<any> {
+  private async postRequestUrl(url: string, body: string): Promise<MCPResult> {
     const resp = await requestUrl({
       url,
       method: "POST",
@@ -115,7 +98,7 @@ export class SyncVaultBridge {
     if (resp.status === 0) throw new Error(t("mcpConnectFailed"))
     if (resp.status !== 200) throw new Error(t("mcpError", String(resp.status)))
 
-    const mcpResp = resp.json as any
+    const mcpResp = resp.json as { error?: { message: string }; result?: MCPResult }
     if (mcpResp?.error) throw new Error(mcpResp.error.message)
     if (!mcpResp?.result) throw new Error(t("mcpEmpty"))
 
@@ -125,24 +108,11 @@ export class SyncVaultBridge {
   private async detect(): Promise<boolean> {
     for (const url of [
       "http://127.0.0.1:3002/message",
-      // "http://127.0.0.1:3000/message",
-      // "http://localhost:3002/message",
-      // "http://localhost:3000/message",
     ]) {
       try {
         const body = JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} })
-
-        let respJson: any
-
-        // try {
-        //   const result = await this.postFetch(url, body)
-        //   respJson = result
-        // } catch {
-        const result = await this.postRequestUrl(url, body)
-        respJson = result
-        // }
-
-        if (respJson?.tools) {
+        const mcpResp = await this.postRequestUrl(url, body)
+        if (mcpResp?.tools) {
           this.endpoint = url
           this.ready = true
           return true
@@ -154,15 +124,15 @@ export class SyncVaultBridge {
     return false
   }
 
-  private parse(result: any): any {
+  private parse(result: MCPResult): MCPResult | null {
     if (!result) return null
     if (result.content?.[0]?.type === "text") {
-      try { return JSON.parse(result.content[0].text) } catch { return result.content[0].text }
+      try { return JSON.parse(result.content[0].text) as MCPResult } catch { return null }
     }
     return result
   }
 
-  private mapEntry(f: any, cloudType: CloudDiskType): CloudFileEntry {
+  private mapEntry(f: RawCloudEntry, cloudType: CloudDiskType): CloudFileEntry {
     return {
       cloudType,
       path: f.path || "",

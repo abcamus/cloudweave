@@ -69,15 +69,10 @@ export interface CanvasNodeElement {
   setData?(data: Partial<CanvasNodeElement>): void
 }
 
-export interface CanvasSelection {
-  nodes: Set<string>
-  edges: Set<string>
-}
-
 export interface Canvas {
   nodes: Map<string, CanvasNodeElement>
   edges: Map<string, any>
-  selection?: CanvasSelection
+  selection?: Set<{ id: string }>
   getData(): Promise<CanvasData>
   setData(data: CanvasData): Promise<void>
   requestSave(): void
