@@ -1,0 +1,339 @@
+/* ───── Context Menu ───── */
+.menu-item.cc-insert-cloud.selected {
+  background-color: var(--background-modifier-hover);
+}
+
+/* ───── Cloud File Picker ───── */
+.cc-cloud-selector {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cc-search-bar {
+  padding: 8px 0;
+}
+
+.cc-breadcrumb {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cc-crumb-link {
+  cursor: pointer;
+  color: var(--text-accent);
+}
+
+.cc-crumb-current {
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cc-file-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.cc-file-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.cc-file-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.cc-file-name {
+  flex: 1;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-file-size {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.cc-loading,
+.cc-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+/* ───── AI Items in .canvas-card-menu ───── */
+.cc-ai-menu-items {
+  display: contents;
+}
+
+/* ───── AI Popover (custom query input) ───── */
+.cc-ai-popover {
+  position: fixed;
+  z-index: 300;
+  width: 420px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cc-popover-in 0.15s ease-out;
+}
+
+@keyframes cc-popover-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cc-ai-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cc-ai-popover-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 3px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+}
+
+.cc-ai-popover-close:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.cc-ai-popover-body {
+  padding: 10px 14px;
+}
+
+.cc-ai-popover-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.cc-ai-popover-textarea:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.15);
+  background: var(--background-primary);
+}
+
+.cc-ai-popover-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.cc-ai-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 10px;
+  gap: 8px;
+}
+
+.cc-ai-popover-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
+.cc-ai-popover-send-btn {
+  width: 32px;
+  height: 32px;
+  background: var(--interactive-muted);
+  color: var(--text-muted);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.cc-ai-popover-send-btn:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.cc-ai-popover-send-btn.cc-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* ───── Floating Card ───── */
+.cc-floating-card {
+  position: fixed;
+  z-index: 199;
+  width: 420px;
+  max-height: 420px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cc-card-in 0.15s ease-out;
+}
+
+@keyframes cc-card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cc-floating-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cc-floating-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cc-floating-card-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.cc-floating-card-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.cc-floating-card-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.cc-floating-card-content {
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-y: auto;
+  flex: 1;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.cc-floating-card-content h1,
+.cc-floating-card-content h2,
+.cc-floating-card-content h3,
+.cc-floating-card-content h4 {
+  margin: 0.6em 0 0.3em;
+  font-weight: 600;
+}
+
+.cc-floating-card-content h1 { font-size: 1.2em; }
+.cc-floating-card-content h2 { font-size: 1.1em; }
+.cc-floating-card-content h3 { font-size: 1.05em; }
+
+.cc-floating-card-content p {
+  margin: 0.5em 0;
+}
+
+.cc-floating-card-content ul,
+.cc-floating-card-content ol {
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+
+.cc-floating-card-content li {
+  margin: 0.2em 0;
+}
+
+.cc-floating-card-content code {
+  background: var(--background-secondary);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.cc-floating-card-content pre {
+  background: var(--background-secondary);
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.cc-floating-card-content blockquote {
+  border-left: 3px solid var(--interactive-accent);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  color: var(--text-muted);
+}
+
+.cc-floating-card-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.cc-floating-card-loading::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: cc-spin 0.6s linear infinite;
+}
+
+@keyframes cc-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cc-floating-card-error {
+  color: var(--text-error);
+  font-size: 13px;
+}

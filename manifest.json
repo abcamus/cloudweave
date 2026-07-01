@@ -1,0 +1,11 @@
+{
+  "id": "context-canvas",
+  "name": "Context Canvas",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.12",
+  "description": "让 Canvas 成为云端知识上下文 — 云盘媒体节点 + 时间戳笔记 + AI 问答",
+  "author": "Sync Vault",
+  "authorUrl": "",
+  "fundingUrl": "",
+  "isDesktopOnly": false
+}
