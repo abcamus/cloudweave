@@ -4,6 +4,8 @@
 
 Browse and insert cloud storage files into Canvas — AI understands both cloud files and local notes together.
 
+![Screenshot](asset/demo.png)
+
 ---
 
 ## Key Features
