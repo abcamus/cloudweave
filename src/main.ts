@@ -8,6 +8,16 @@ import { TimestampCommand } from "./commands/timestamp"
 import { CanvasToolbar } from "./ui/canvas-toolbar"
 import { ContextCanvasSettingTab } from "./ui/settings-tab"
 
+interface MenuEl {
+  hide?: () => void
+}
+
+interface CanvasLeafView {
+  canvas?: {
+    selectOnly?: (nodeId: string) => void
+  }
+}
+
 export default class ContextCanvasPlugin extends Plugin {
   private canvasService: CanvasService
   private syncVault: SyncVaultBridge
@@ -44,7 +54,6 @@ export default class ContextCanvasPlugin extends Plugin {
     this.addCommand({
       id: "record-timestamp",
       name: t("recordTimestamp"),
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: " " }],
       callback: () => this.timestampCmd.recordTimestamp(0),
     })
 
@@ -59,13 +68,13 @@ export default class ContextCanvasPlugin extends Plugin {
       for (const mutation of mutations) {
         if (mutation.type !== "childList") continue
         for (let i = 0; i < mutation.addedNodes.length; i++) {
-          const node = mutation.addedNodes[i]
-          if (!(node instanceof HTMLElement)) continue
+          const el = mutation.addedNodes[i] as HTMLElement
+          if (el.nodeType !== Node.ELEMENT_NODE) continue
           if (!this.isCanvasContextMenu) continue
-          if (node.matches?.(".menu")) {
-            this.injectMenuItem(node)
+          if (el.matches?.(".menu")) {
+            this.injectMenuItem(el)
           } else {
-            const menus = node.querySelectorAll(".menu")
+            const menus = el.querySelectorAll(".menu")
             for (let j = 0; j < menus.length; j++) {
               this.injectMenuItem(menus[j] as HTMLElement)
             }
@@ -92,8 +101,8 @@ export default class ContextCanvasPlugin extends Plugin {
     const item = createDiv({ cls: "menu-item tappable cc-insert-cloud" })
     item.dataset.section = "cc-insert"
     item.onClickEvent(() => {
-      (menu as any).hide?.()
-      this.insertCloudNodeCmd.execute()
+      void (menu as MenuEl).hide?.()
+      void this.insertCloudNodeCmd.execute()
     })
     item.onmouseenter = () => item.addClass("selected")
     item.onmouseleave = () => item.removeClass("selected")
@@ -119,19 +128,19 @@ export default class ContextCanvasPlugin extends Plugin {
       if (isNaN(time)) return
 
       e.preventDefault()
-      this.jumpToTimestamp(nodeId, time)
+      void this.jumpToTimestamp(nodeId, time)
     })
   }
 
   private async jumpToTimestamp(nodeId: string, time: number) {
     const leaf = this.app.workspace.getLeavesOfType("canvas")[0]
     if (!leaf) {
-      new Notice("请先打开 Canvas 文件")
+      new Notice(t("openCanvasFirst"))
       return
     }
 
     this.app.workspace.setActiveLeaf(leaf, { focus: true })
-    ;(leaf.view as any).canvas?.selectOnly?.(nodeId)
+    void (leaf.view as CanvasLeafView).canvas?.selectOnly?.(nodeId)
   }
 
   onunload() {
