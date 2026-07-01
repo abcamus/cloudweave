@@ -10,7 +10,29 @@ const SYSTEM_PROMPT = `你是一个 Canvas 画布助手。你可以分析画布�
 你可以使用以下工具：
 - read_file: 读取 vault 中指定文件的内容。当节点只提供了文件路径而没有具体内容时，你可以调用此工具来获取文件内容。`
 
-const TOOLS = [
+interface LLMMessage {
+  role: string
+  content: string
+  name?: string
+}
+
+interface LLMToolDef {
+  type: string
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
+
+interface ToolCallRaw {
+  function: {
+    name: string
+    arguments: string
+  }
+}
+
+const TOOLS: LLMToolDef[] = [
   {
     type: "function",
     function: {
@@ -41,6 +63,13 @@ interface LLMResponse {
 }
 
 type StreamChunk = (text: string) => void
+
+function parseToolCallsFromRaw(raw: ToolCallRaw[]): ToolCall[] {
+  return raw.map(tc => ({
+    name: tc.function.name,
+    arguments: JSON.parse(tc.function.arguments) as Record<string, string>,
+  }))
+}
 
 export class ContextAIService {
   private spatialEncoder = new SpatialSemanticEncoder()
@@ -132,7 +161,7 @@ export class ContextAIService {
     return "（已达到最大工具调用轮次）"
   }
 
-  private buildMessages(context: CanvasAIContext, question: string): any[] {
+  private buildMessages(context: CanvasAIContext, question: string): LLMMessage[] {
     const contents = context.textContents
       .map((t, i) => {
         if (i === 0) return `--- 画布布局 ---\n${t}`
@@ -164,15 +193,15 @@ export class ContextAIService {
     }
   }
 
-  private async respondOllama(messages: any[], tools: any[] | null, config: LLMConfig): Promise<LLMResponse> {
+  private async respondOllama(messages: LLMMessage[], tools: LLMToolDef[] | null, config: LLMConfig): Promise<LLMResponse> {
     const url = config.endpoint || "http://localhost:11434/api/chat"
-    const body: any = {
+    const body = {
       model: config.model || "qwen2",
       messages,
       stream: false,
       options: { num_predict: 4096 },
+      ...(tools ? { tools } : {}),
     }
-    if (tools) body.tools = tools
 
     const resp = await requestUrl({
       url,
@@ -181,39 +210,32 @@ export class ContextAIService {
       body: JSON.stringify(body),
     })
 
-    const msg = resp.json.message
+    const data = resp.json as { message: { content?: string; tool_calls?: ToolCallRaw[] } }
+    const msg = data.message
 
     if (msg.tool_calls) {
-      return {
-        content: null,
-        toolCalls: msg.tool_calls.map((tc: any) => ({
-          name: tc.function.name,
-          arguments: typeof tc.function.arguments === "string"
-            ? JSON.parse(tc.function.arguments)
-            : tc.function.arguments,
-        })),
-      }
+      return { content: null, toolCalls: parseToolCallsFromRaw(msg.tool_calls) }
     }
 
-    return { content: msg.content, toolCalls: null }
+    return { content: msg.content ?? null, toolCalls: null }
   }
 
   private async respondOllamaStream(
-    messages: any[],
-    tools: any[] | null,
+    messages: LLMMessage[],
+    tools: LLMToolDef[] | null,
     config: LLMConfig,
     onChunk: StreamChunk,
   ): Promise<LLMResponse> {
     const url = config.endpoint || "http://localhost:11434/api/chat"
-    const body: any = {
+    const body = {
       model: config.model || "qwen2",
       messages,
       stream: true,
       options: { num_predict: 4096 },
+      ...(tools ? { tools } : {}),
     }
-    if (tools) body.tools = tools
 
-    const resp = await fetch(url, {
+    const resp = await window.fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -237,19 +259,14 @@ export class ContextAIService {
         const trimmed = line.trim()
         if (!trimmed) continue
         try {
-          const data = JSON.parse(trimmed)
+          const data = JSON.parse(trimmed) as { done?: boolean; message?: { content?: string; tool_calls?: ToolCallRaw[] } }
           if (data.done) break
           if (data.message?.content) {
             fullContent += data.message.content
             onChunk(data.message.content)
           }
           if (data.message?.tool_calls) {
-            toolCalls = data.message.tool_calls.map((tc: any) => ({
-              name: tc.function.name,
-              arguments: typeof tc.function.arguments === "string"
-                ? JSON.parse(tc.function.arguments)
-                : tc.function.arguments,
-            }))
+            toolCalls = parseToolCallsFromRaw(data.message.tool_calls)
           }
         } catch { /* skip malformed lines */ }
       }
@@ -259,12 +276,16 @@ export class ContextAIService {
     return { content: fullContent, toolCalls: null }
   }
 
-  private async respondOpenAI(messages: any[], tools: any[] | null, config: LLMConfig): Promise<LLMResponse> {
+  private async respondOpenAI(messages: LLMMessage[], tools: LLMToolDef[] | null, config: LLMConfig): Promise<LLMResponse> {
     const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
     const headers: Record<string, string> = {}
     if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
-    const body: any = { model: config.model || "gpt-4o-mini", messages, max_tokens: 4096 }
-    if (tools) body.tools = tools
+    const body = {
+      model: config.model || "gpt-4o-mini",
+      messages,
+      max_tokens: 4096,
+      ...(tools ? { tools } : {}),
+    }
 
     const resp = await requestUrl({
       url,
@@ -274,37 +295,35 @@ export class ContextAIService {
       body: JSON.stringify(body),
     })
 
-    const choice = resp.json.choices?.[0]
+    const data = resp.json as { choices?: Array<{ message?: { content?: string; tool_calls?: ToolCallRaw[] } }> }
+    const choice = data.choices?.[0]
     const msg = choice?.message
 
     if (msg?.tool_calls) {
-      return {
-        content: null,
-        toolCalls: msg.tool_calls.map((tc: any) => ({
-          name: tc.function.name,
-          arguments: typeof tc.function.arguments === "string"
-            ? JSON.parse(tc.function.arguments)
-            : tc.function.arguments,
-        })),
-      }
+      return { content: null, toolCalls: parseToolCallsFromRaw(msg.tool_calls) }
     }
 
-    return { content: msg?.content || null, toolCalls: null }
+    return { content: msg?.content ?? null, toolCalls: null }
   }
 
   private async respondOpenAIStream(
-    messages: any[],
-    tools: any[] | null,
+    messages: LLMMessage[],
+    tools: LLMToolDef[] | null,
     config: LLMConfig,
     onChunk: StreamChunk,
   ): Promise<LLMResponse> {
     const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
     const headers: Record<string, string> = { "Content-Type": "application/json" }
     if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
-    const body: any = { model: config.model || "gpt-4o-mini", messages, stream: true, max_tokens: 4096 }
-    if (tools) body.tools = tools
+    const body = {
+      model: config.model || "gpt-4o-mini",
+      messages,
+      stream: true,
+      max_tokens: 4096,
+      ...(tools ? { tools } : {}),
+    }
 
-    const resp = await fetch(url, {
+    const resp = await window.fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -330,7 +349,7 @@ export class ContextAIService {
         const json = trimmed.slice(6)
         if (json === "[DONE]") break
         try {
-          const data = JSON.parse(json)
+          const data = JSON.parse(json) as { choices?: Array<{ delta?: { content?: string; tool_calls?: ToolCallRaw[] } }> }
           const delta = data.choices?.[0]?.delta
           if (!delta) continue
           if (delta.content) {
@@ -338,12 +357,7 @@ export class ContextAIService {
             onChunk(delta.content)
           }
           if (delta.tool_calls) {
-            toolCalls = delta.tool_calls.map((tc: any) => ({
-              name: tc.function?.name,
-              arguments: typeof tc.function?.arguments === "string"
-                ? JSON.parse(tc.function.arguments)
-                : tc.function?.arguments,
-            }))
+            toolCalls = parseToolCallsFromRaw(delta.tool_calls)
           }
         } catch { /* skip */ }
       }

@@ -8,6 +8,8 @@ export class FloatingCard {
   private renderComp: Component | null = null
   private streamingText = ""
   private copyBtn: HTMLElement
+  private streamTimer: number | null = null
+  private isRendered = false
 
   constructor(
     private app: App,
@@ -19,7 +21,7 @@ export class FloatingCard {
     document.body.appendChild(this.container)
 
     const header = this.container.createDiv("cc-floating-card-header")
-    const title = header.createSpan({ cls: "cc-floating-card-title", text: "AI" })
+    header.createSpan({ cls: "cc-floating-card-title", text: "AI" })
 
     const actions = header.createDiv("cc-floating-card-actions")
 
@@ -41,7 +43,7 @@ export class FloatingCard {
   private async copyContent() {
     const text = this.contentEl.textContent || ""
     await navigator.clipboard.writeText(text)
-    new Notice("已复制")
+    new Notice(t("aiCopied"))
     setIcon(this.copyBtn, "check")
     setTimeout(() => setIcon(this.copyBtn, "copy"), 1500)
   }
@@ -56,7 +58,7 @@ export class FloatingCard {
     this.contentEl.empty()
     this.contentEl.removeClass("cc-floating-card-error")
     this.contentEl.addClass("cc-floating-card-loading")
-    const msg = this.contentEl.createSpan({ text: t("aiRequesting") })
+    this.contentEl.createSpan({ text: t("aiRequesting") })
     this.position()
     this.container.show()
   }
@@ -68,6 +70,11 @@ export class FloatingCard {
     this.contentEl.removeClass("cc-floating-card-loading")
     this.contentEl.removeClass("cc-floating-card-error")
     this.streamingText = ""
+    this.isRendered = false
+    if (this.streamTimer) {
+      clearTimeout(this.streamTimer)
+      this.streamTimer = null
+    }
     this.position()
     this.container.show()
   }
@@ -77,9 +84,29 @@ export class FloatingCard {
     this.contentEl.setText(this.streamingText)
     this.contentEl.scrollTop = this.contentEl.scrollHeight
     this.position()
+
+    if (this.streamTimer) clearTimeout(this.streamTimer)
+    this.streamTimer = window.setTimeout(() => this.renderStreamMd(), 400)
+  }
+
+  private async renderStreamMd() {
+    const text = this.streamingText
+    if (!text.trim()) return
+
+    this.renderComp?.unload()
+    this.contentEl.empty()
+    this.renderComp = new Component()
+    await MarkdownRenderer.render(this.app, text, this.contentEl, "", this.renderComp)
+    this.contentEl.scrollTop = this.contentEl.scrollHeight
+    this.position()
+    this.isRendered = true
   }
 
   async showResult(text: string) {
+    if (this.streamTimer) {
+      clearTimeout(this.streamTimer)
+      this.streamTimer = null
+    }
     this.renderComp?.unload()
     this.contentEl.removeClass("cc-floating-card-loading")
     this.contentEl.removeClass("cc-floating-card-error")
@@ -90,6 +117,7 @@ export class FloatingCard {
     this.contentEl.scrollTop = 0
     this.position()
     this.container.show()
+    this.isRendered = false
   }
 
   showError(message: string) {
@@ -129,6 +157,7 @@ export class FloatingCard {
   }
 
   unmount() {
+    if (this.streamTimer) clearTimeout(this.streamTimer)
     this.renderComp?.unload()
     this.container.remove()
   }

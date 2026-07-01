@@ -1,17 +1,26 @@
-import { App, PluginSettingTab, Setting } from "obsidian"
+import { App, Plugin, PluginSettingTab, Setting } from "obsidian"
 import { t } from "../i18n"
 import { LLMConfig } from "../types"
 
 export class ContextCanvasSettingTab extends PluginSettingTab {
-  constructor(app: App, private plugin: any) {
+  constructor(app: App, private plugin: Plugin) {
     super(app, plugin)
+  }
+
+  getSettingDefinitions(): { name: string; desc?: string }[] {
+    return [
+      { name: t("settingsProvider"), desc: t("settingsProviderDesc") },
+      { name: t("settingsApiKey"), desc: t("settingsApiKeyDesc") },
+      { name: t("settingsModel"), desc: t("settingsModelDesc") },
+      { name: t("settingsEndpoint"), desc: t("settingsEndpointDesc") },
+    ]
   }
 
   display() {
     const { containerEl } = this
     containerEl.empty()
 
-    containerEl.createEl("h2", { text: t("settingsTitle") })
+    new Setting(containerEl).setName(t("settingsTitle")).setHeading()
 
     const config = this.loadConfig()
 
@@ -58,7 +67,7 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
       .setName(t("settingsEndpoint"))
       .setDesc(t("settingsEndpointDesc"))
       .addText((txt) => {
-        txt.setPlaceholder("https://api.openai.com/v1/chat/completions")
+        txt.setPlaceholder("HTTPS://API.OpenAI.com/v1/chat/completions")
         txt.setValue(config.endpoint || "")
         txt.onChange((val) => {
           config.endpoint = val || undefined
@@ -68,15 +77,15 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
   }
 
   private loadConfig(): LLMConfig {
-    const raw = localStorage.getItem("cc-llm-config")
+    const raw = this.app.loadLocalStorage("cc-llm-config") as string | null
     if (raw) {
-      try { return JSON.parse(raw) }
+      try { return JSON.parse(raw) as LLMConfig }
       catch { /* ignore */ }
     }
     return { provider: "openai", apiKey: "", model: "gpt-4o-mini" }
   }
 
   private saveConfig(config: LLMConfig) {
-    localStorage.setItem("cc-llm-config", JSON.stringify(config))
+    this.app.saveLocalStorage("cc-llm-config", JSON.stringify(config))
   }
 }

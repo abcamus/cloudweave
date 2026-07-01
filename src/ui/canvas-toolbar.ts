@@ -14,6 +14,8 @@ const PRESET_PROMPTS: Record<string, string> = {
 
 const CC_MENU_MARKER = "cc-ai-menu-items"
 
+type CanvasView = ItemView & { contentEl?: HTMLElement }
+
 export class CanvasToolbar {
   private inputPopover: HTMLElement
   private questionInput: HTMLTextAreaElement
@@ -86,9 +88,9 @@ export class CanvasToolbar {
   }
 
   private getCardMenu(): HTMLElement | null {
-    const view = this.app.workspace.getActiveViewOfType(ItemView)
+    const view = this.app.workspace.getActiveViewOfType(ItemView) as CanvasView | null
     if (!view || view.getViewType() !== CANVAS_VIEW_TYPE) return null
-    const container = (view as any).contentEl || (view as any).containerEl
+    const container = view.contentEl || view.containerEl
     if (!container) return null
     return container.querySelector(".canvas-card-menu") as HTMLElement | null
   }
