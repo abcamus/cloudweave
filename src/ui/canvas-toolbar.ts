@@ -40,7 +40,7 @@ export class CanvasToolbar {
   private buildPopover() {
     this.inputPopover = createDiv({ cls: "cc-ai-popover" })
     this.inputPopover.hide()
-    document.body.appendChild(this.inputPopover)
+    activeDocument.body.appendChild(this.inputPopover)
 
     const header = this.inputPopover.createDiv("cc-ai-popover-header")
     header.createSpan({ text: "💬 Ask AI about selected nodes" })
@@ -114,7 +114,7 @@ export class CanvasToolbar {
   private poll() {
     this.canvasService.refresh()
 
-    if (document.querySelector(".modal-container")) {
+    if (activeDocument.querySelector(".modal-container")) {
       this.hideUI()
       return
     }

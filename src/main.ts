@@ -61,7 +61,7 @@ export default class ContextCanvasPlugin extends Plugin {
   }
 
   private initCanvasContextMenu() {
-    document.addEventListener("contextmenu", (e) => {
+    activeDocument.addEventListener("contextmenu", (e) => {
       const target = e.target as HTMLElement
       const inCanvas = !!target.closest(".canvas-wrapper")
       const onNode = !!target.closest(".canvas-node")
@@ -91,7 +91,7 @@ export default class ContextCanvasPlugin extends Plugin {
       }
     })
 
-    this.menuObserver.observe(document.body, { childList: true, subtree: true })
+    this.menuObserver.observe(activeDocument.body, { childList: true, subtree: true })
   }
 
   private injectMenuItem(menu: HTMLElement) {
@@ -166,7 +166,7 @@ export default class ContextCanvasPlugin extends Plugin {
   }
 
   private registerCodeMirrorProtocol() {
-    this.registerDomEvent(document, "click", (e) => {
+    this.registerDomEvent(activeDocument, "click", (e) => {
       const target = e.target as HTMLElement
       const href = target.getAttribute("href")
       if (!href?.startsWith("cc-timestamp://")) return

@@ -42,7 +42,7 @@ export class CanvasService {
       return Array.from(canvas.selection, n => n.id)
     }
 
-    return Array.from(document.querySelectorAll(".canvas-node.is-selected"))
+    return Array.from(activeDocument.querySelectorAll(".canvas-node.is-selected"))
       .map(el => el.getAttribute("data-id") || el.id)
       .filter(Boolean)
   }
@@ -95,7 +95,7 @@ export class CanvasService {
       if (n) return { x: n.x + n.width + 40, y: n.y }
     }
 
-    const wrapper = document.querySelector(".canvas-wrapper") as HTMLElement
+      const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement
     if (wrapper) {
       const ref = wrapper.querySelector(".canvas-node") as HTMLElement
       if (ref) {
@@ -111,10 +111,10 @@ export class CanvasService {
 
   private scrollToNode(nodeId: string) {
     window.setTimeout(() => {
-      const nodeEl = document.querySelector(`.canvas-node[data-id="${nodeId}"]`) as HTMLElement
+      const nodeEl = activeDocument.querySelector(`.canvas-node[data-id="${nodeId}"]`) as HTMLElement
       if (!nodeEl) return
 
-      const wrapper = document.querySelector(".canvas-wrapper") as HTMLElement
+    const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement
       if (!wrapper) return
 
       const overflow = window.getComputedStyle(wrapper).overflow
