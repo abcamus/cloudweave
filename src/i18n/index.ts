@@ -1,14 +1,13 @@
 import en from "./locales/en"
 import zh from "./locales/zh"
+import { getLanguage } from "obsidian"
 
 const locales: Record<string, Record<string, string>> = { en, zh }
 
 let lang = "zh"
 
 export function initLocale() {
-  const stored = window.localStorage.getItem("language")
-  const momentLocale = (window as any).moment?.locale?.()
-  const detected = stored || momentLocale || navigator.language || "zh"
+  const detected = getLanguage() || navigator.language || "zh"
   lang = detected.startsWith("zh") ? "zh" : "en"
 }
 

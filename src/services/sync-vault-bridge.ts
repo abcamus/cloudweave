@@ -2,8 +2,6 @@ import { requestUrl } from "obsidian"
 import { t } from "../i18n"
 import { CloudFileEntry, CloudDiskType, CloudFileCategory } from "../types"
 
-const TIMEOUT = 5000
-
 interface RawCloudEntry {
   path?: string
   name?: string

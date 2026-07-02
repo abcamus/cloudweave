@@ -29,12 +29,9 @@ export class InsertCloudNodeCommand {
       return
     }
 
-    new CloudFilePickerModal(
-      this.app,
-      this.syncVault,
-      async (file) => {
-        await this.cloudNodeService.insertCloudFile(file)
-      }
-    ).open()
+    const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
+      void this.cloudNodeService.insertCloudFile(file)
+    })
+    modal.open()
   }
 }

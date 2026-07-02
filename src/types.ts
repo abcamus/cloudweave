@@ -71,7 +71,7 @@ export interface CanvasNodeElement {
 
 export interface Canvas {
   nodes: Map<string, CanvasNodeElement>
-  edges: Map<string, any>
+  edges: Map<string, CanvasEdge>
   selection?: Set<{ id: string }>
   getData(): Promise<CanvasData>
   setData(data: CanvasData): Promise<void>

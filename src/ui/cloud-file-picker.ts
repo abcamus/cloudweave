@@ -25,7 +25,7 @@ export class CloudFilePickerModal extends Modal {
     this.renderSearchBar()
     this.renderBreadcrumb()
     this.renderFileList()
-    this.loadFiles()
+    void this.loadFiles()
   }
 
   private renderCloudSelector() {
@@ -65,7 +65,7 @@ export class CloudFilePickerModal extends Modal {
         txt.onChange((val) => {
           this.searchQuery = val
           if (this.searchTimer) window.clearTimeout(this.searchTimer)
-          this.searchTimer = window.setTimeout(() => this.loadFiles(), 300)
+          this.searchTimer = window.setTimeout(() => void this.loadFiles(), 300)
         })
       })
   }
@@ -96,7 +96,7 @@ export class CloudFilePickerModal extends Modal {
   }
 
   private renderFileList() {
-    const container = this.contentEl.createDiv("cc-file-list")
+    this.contentEl.createDiv("cc-file-list")
   }
 
   private seq = 0
@@ -130,7 +130,7 @@ export class CloudFilePickerModal extends Modal {
       if (seq !== this.seq) return
       this.loading = false
       this.render()
-      new Notice(t("readFailed", e.message))
+      new Notice(t("readFailed", e instanceof Error ? e.message : String(e)))
     }
   }
 
