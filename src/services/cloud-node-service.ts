@@ -53,6 +53,109 @@ export class CloudNodeService {
     }
   }
 
+  async insertFolder(
+    folder: CloudFileEntry,
+    depth: number = 1,
+    pos?: { x: number; y: number },
+  ): Promise<void> {
+    const data = await this.canvasService.getData()
+    if (!data) return
+
+    const groupId = `cloud-folder-${folder.cloudType}-${folder.fsid}-${Date.now()}`
+    const cloudLabel = this.getCloudLabel(folder.cloudType)
+
+    const result = await this.syncVault.listFiles(folder.path, folder.cloudType, 100, 0)
+    const children = result.files.filter(f => !f.isdir)
+    const subdirs = result.files.filter(f => f.isdir)
+
+    const groupPad = 24
+    const headerH = 44
+    const gap = 16
+    const cols = 3
+    const cardW = 220
+    const cardH = 120
+
+    const totalCards = children.length + subdirs.length
+    const rows = Math.max(1, Math.ceil(totalCards / cols))
+    const groupW = groupPad * 2 + cols * cardW + (cols - 1) * gap
+    const contentH = rows * cardH + (rows - 1) * gap
+    const groupH = groupPad * 2 + headerH + contentH
+
+    const ref = pos || this.canvasService.findRefNode(data)
+    const gx = ref.x
+    const gy = ref.y
+
+    data.nodes.push({
+      id: groupId,
+      x: gx,
+      y: gy,
+      width: groupW,
+      height: groupH,
+      type: "group",
+      label: folder.name,
+      text: `📁 ${folder.name}\n${cloudLabel}`,
+    })
+
+    const allItems = [...subdirs, ...children]
+    const insertedIds: string[] = []
+
+    for (let i = 0; i < allItems.length; i++) {
+      const item = allItems[i]
+      const col = i % cols
+      const row = Math.floor(i / cols)
+
+      const cx = gx + groupPad + col * (cardW + gap)
+      const cy = gy + groupPad + headerH + row * (cardH + gap)
+      const itemId = `cloud-${item.cloudType}-${item.fsid}-${Date.now()}-${i}`
+
+      if (item.isdir) {
+        data.nodes.push({
+          id: itemId,
+          x: cx,
+          y: cy,
+          width: cardW,
+          height: cardH,
+          type: "text",
+          label: item.name,
+          text: `📁 ${item.name}`,
+          color: "3",
+        })
+      } else {
+        const category = this.syncVault.getCategory(item)
+        const content = this.buildContent(item, category)
+        const color = CLOUD_NODE_COLORS[category] || "1"
+        const isWide = category === "video" || category === "audio"
+
+        data.nodes.push({
+          id: itemId,
+          x: cx,
+          y: cy,
+          width: isWide ? 320 : cardW,
+          height: isWide ? 200 : cardH,
+          type: "text",
+          label: item.name.replace(/\.[^.]+$/, ""),
+          text: content,
+          color,
+        })
+      }
+
+      insertedIds.push(itemId)
+    }
+
+    for (const childId of insertedIds) {
+      if (!data.edges.some(e => e.fromNode === groupId && e.toNode === childId)) {
+        data.edges.push({
+          id: `edge-${groupId}-${childId}`,
+          fromNode: groupId,
+          toNode: childId,
+        })
+      }
+    }
+
+    await this.canvasService.setData(data)
+    new Notice(t("insertedFolder", folder.name, String(insertedIds.length)))
+  }
+
   private buildContent(file: CloudFileEntry, category: CloudFileCategory): string {
     const meta: CloudNodeMeta = {
       cloudType: file.cloudType,

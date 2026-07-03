@@ -51,6 +51,13 @@ const en: Record<string, string> = {
   cloudLabelQuark: "Quark",
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
+  insertFolderLabel: "Insert folder",
+  insertFolderConfirm: "Insert this folder as a group with its contents?",
+  insertFolderDepth: "Recursive depth",
+  insertFolderFlat: "Current directory only",
+  insertFolderShallow: "One level deep",
+  insertFolderDeep: "Two levels deep",
+  insertedFolder: "Inserted folder: {0} ({1} items)",
 }
 
 export default en

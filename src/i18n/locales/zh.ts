@@ -51,6 +51,13 @@ const zh: Record<string, string> = {
   cloudLabelQuark: "夸克网盘",
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
+  insertFolderLabel: "插入文件夹",
+  insertFolderConfirm: "将当前文件夹以分组形式插入画布？",
+  insertFolderDepth: "递归深度",
+  insertFolderFlat: "仅当前目录",
+  insertFolderShallow: "一层深",
+  insertFolderDeep: "两层深",
+  insertedFolder: "已插入文件夹: {0}（{1} 项）",
 }
 
 export default zh

@@ -172,7 +172,7 @@ export class CanvasToolbar {
     const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault)
     const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
       void cloudNodeService.insertCloudFile(file)
-    })
+    }, cloudNodeService)
     modal.open()
   }
 

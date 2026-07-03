@@ -1,7 +1,8 @@
-import { App, Modal, Setting, Notice } from "obsidian"
+import { App, Modal, Setting, Notice, setIcon } from "obsidian"
 import { t } from "../i18n"
 import { CloudFileEntry, CloudDiskType } from "../types"
 import { SyncVaultBridge } from "../services/sync-vault-bridge"
+import { CloudNodeService } from "../services/cloud-node-service"
 
 export class CloudFilePickerModal extends Modal {
   private files: CloudFileEntry[] = []
@@ -14,7 +15,8 @@ export class CloudFilePickerModal extends Modal {
   constructor(
     app: App,
     private syncVault: SyncVaultBridge,
-    private onPick: (file: CloudFileEntry) => void
+    private onPick: (file: CloudFileEntry) => void,
+    private cloudNodeService?: CloudNodeService,
   ) {
     super(app)
     this.titleEl.setText(t("cloudInsertTitle"))
@@ -172,6 +174,16 @@ export class CloudFilePickerModal extends Modal {
           this.currentPath = file.path
           await this.loadFiles()
         })
+
+        if (this.cloudNodeService) {
+          const insertBtn = row.createSpan({ cls: "cc-folder-insert-btn", attr: { "aria-label": t("insertFolderLabel") } })
+          setIcon(insertBtn, "folder-plus")
+          insertBtn.onClickEvent((e) => {
+            e.stopPropagation()
+            void this.cloudNodeService!.insertFolder(file)
+            this.close()
+          })
+        }
       } else {
         row.onClickEvent(() => {
           this.onPick(file)

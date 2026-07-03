@@ -88,7 +88,7 @@ export class CanvasService {
     this.scrollToNode(nodeId)
   }
 
-  private findRefNode(data: CanvasData): { x: number; y: number } {
+  findRefNode(data: CanvasData): { x: number; y: number } {
     const ids = this.getSelectedNodeIds()
     if (ids.length > 0) {
       const n = data.nodes.find(n => ids.includes(n.id))
