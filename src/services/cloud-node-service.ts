@@ -97,7 +97,6 @@ export class CloudNodeService {
     })
 
     const allItems = [...subdirs, ...children]
-    const insertedIds: string[] = []
 
     for (let i = 0; i < allItems.length; i++) {
       const item = allItems[i]
@@ -139,21 +138,10 @@ export class CloudNodeService {
         })
       }
 
-      insertedIds.push(itemId)
-    }
-
-    for (const childId of insertedIds) {
-      if (!data.edges.some(e => e.fromNode === groupId && e.toNode === childId)) {
-        data.edges.push({
-          id: `edge-${groupId}-${childId}`,
-          fromNode: groupId,
-          toNode: childId,
-        })
-      }
     }
 
     await this.canvasService.setData(data)
-    new Notice(t("insertedFolder", folder.name, String(insertedIds.length)))
+    new Notice(t("insertedFolder", folder.name, String(allItems.length)))
   }
 
   private buildContent(file: CloudFileEntry, category: CloudFileCategory): string {
