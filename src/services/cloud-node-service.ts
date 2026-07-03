@@ -81,7 +81,7 @@ export class CloudNodeService {
     const contentH = rows * cardH + (rows - 1) * gap
     const groupH = groupPad * 2 + headerH + contentH
 
-    const ref = pos || this.canvasService.findRefNode(data)
+    const ref = pos || this.canvasService.posCenter()
     const gx = ref.x
     const gy = ref.y
 
@@ -140,6 +140,7 @@ export class CloudNodeService {
     }
 
     await this.canvasService.setData(data)
+    this.canvasService.scrollToNode(groupId)
     new Notice(t("insertedFolder", folder.name, String(allItems.length)))
   }
 

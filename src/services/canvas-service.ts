@@ -6,7 +6,6 @@ type CanvasView = ItemView & { canvas?: Canvas }
 
 export class CanvasService {
   private activeCanvas: Canvas | null = null
-  private cloudNodeCount = 0
 
   constructor(private app: App) {}
 
@@ -56,20 +55,20 @@ export class CanvasService {
     width = 220,
     height = 300,
   ): Promise<void> {
+    const canvas = this.getCanvas()
+    if (!canvas) return
+
     const data = await this.getData()
     if (!data) return
 
     let x: number, y: number
-
     if (pos) {
       x = pos.x
       y = pos.y
     } else {
-      const ref = this.findRefNode(data)
-      const offset = this.cloudNodeCount * 40
-      this.cloudNodeCount++
-      x = ref.x + offset
-      y = ref.y + offset
+      const c = this.posCenter()
+      x = c.x
+      y = c.y
     }
 
     data.nodes.push({
@@ -88,6 +87,77 @@ export class CanvasService {
     this.scrollToNode(nodeId)
   }
 
+  posCenter(): { x: number; y: number } {
+    const canvas = this.getCanvas()
+    if (canvas) {
+      const internal = (canvas as any)
+      if (typeof internal.posCenter === "function") {
+        return internal.posCenter()
+      }
+    }
+    return this.getViewportCenter()
+  }
+
+  private getViewportCenter(): { x: number; y: number } {
+    const canvas = this.getCanvas()
+    if (canvas) {
+      const internal = (canvas as any)
+      if (typeof internal.getViewportCenter === "function") {
+        const pos = internal.getViewportCenter()
+        if (pos && typeof pos.x === "number") {
+          return { x: pos.x, y: pos.y }
+        }
+      }
+      if (typeof internal.getScroll === "function") {
+        const scroll = internal.getScroll()
+        if (scroll && typeof scroll.x === "number" && typeof scroll.scale === "number") {
+          const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement
+          if (wrapper) {
+            return {
+              x: scroll.x / scroll.scale + wrapper.clientWidth / (2 * scroll.scale),
+              y: scroll.y / scroll.scale + wrapper.clientHeight / (2 * scroll.scale),
+            }
+          }
+        }
+      }
+    }
+
+    const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement
+    if (!wrapper) return { x: 200, y: 200 }
+
+    const zoomArea = Array.from(wrapper.children).find((el) => {
+      const style = (el as HTMLElement).style.transform || window.getComputedStyle(el as HTMLElement).transform
+      return style && style !== "none"
+    }) as HTMLElement | undefined
+
+    if (!zoomArea) return { x: wrapper.clientWidth / 2, y: wrapper.clientHeight / 2 }
+
+    let tx = 0, ty = 0, scale = 1
+    const ts = zoomArea.style.transform || window.getComputedStyle(zoomArea).transform
+
+    const matrix = ts.match(/matrix\(([^)]+)\)/)
+    if (matrix) {
+      const p = matrix[1].split(",").map(v => parseFloat(v.trim()))
+      if (p.length >= 6) {
+        tx = p[4] || 0
+        ty = p[5] || 0
+        scale = Math.abs(p[0]) || 1
+      }
+    } else {
+      const m = ts.replace(/\s+/g, " ").match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/)
+      if (m) {
+        tx = parseFloat(m[1]) || 0
+        ty = parseFloat(m[2]) || 0
+        scale = parseFloat(m[3]) || 1
+      }
+    }
+
+    return {
+      x: (-tx) / scale + wrapper.clientWidth / (2 * scale),
+      y: (-ty) / scale + wrapper.clientHeight / (2 * scale),
+    }
+  }
+
   findRefNode(data: CanvasData): { x: number; y: number } {
     const ids = this.getSelectedNodeIds()
     if (ids.length > 0) {
@@ -95,21 +165,10 @@ export class CanvasService {
       if (n) return { x: n.x + n.width + 40, y: n.y }
     }
 
-      const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement
-    if (wrapper) {
-      const ref = wrapper.querySelector(".canvas-node") as HTMLElement
-      if (ref) {
-        return {
-          x: (parseInt(ref.style.left) || 0) + 320,
-          y: parseInt(ref.style.top) || 0,
-        }
-      }
-    }
-
-    return { x: 100, y: 100 }
+    return this.getViewportCenter()
   }
 
-  private scrollToNode(nodeId: string) {
+  scrollToNode(nodeId: string) {
     window.setTimeout(() => {
       const nodeEl = activeDocument.querySelector(`.canvas-node[data-id="${nodeId}"]`) as HTMLElement
       if (!nodeEl) return
