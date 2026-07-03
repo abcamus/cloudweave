@@ -123,14 +123,13 @@ export class CloudNodeService {
         const category = this.syncVault.getCategory(item)
         const content = this.buildContent(item, category)
         const color = CLOUD_NODE_COLORS[category] || "1"
-        const isWide = category === "video" || category === "audio"
 
         data.nodes.push({
           id: itemId,
           x: cx,
           y: cy,
-          width: isWide ? 320 : cardW,
-          height: isWide ? 200 : cardH,
+          width: cardW,
+          height: cardH,
           type: "text",
           label: item.name.replace(/\.[^.]+$/, ""),
           text: content,

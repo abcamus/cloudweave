@@ -70,24 +70,39 @@ export default class ContextCanvasPlugin extends Plugin {
     }, true)
 
     this.menuObserver = new MutationObserver((mutations) => {
+      if (!activeDocument.querySelector(".canvas-wrapper")) return
+
       for (const mutation of mutations) {
         if (mutation.type !== "childList") continue
-        if (!this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu) continue
+
+        const isEdgeDrag = !this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu
+
         for (let i = 0; i < mutation.addedNodes.length; i++) {
           const el = mutation.addedNodes[i] as HTMLElement
           if (el.nodeType !== Node.ELEMENT_NODE) continue
+
+          const checkMenu = (menu: HTMLElement) => {
+            if (this.isCanvasBgContextMenu) this.injectMenuItem(menu)
+            if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(menu)
+            if (isEdgeDrag && menu.querySelector('[data-section="action"]')) {
+              this.injectMenuItem(menu)
+            }
+          }
+
           if (el.matches?.(".menu")) {
-            if (this.isCanvasBgContextMenu) this.injectMenuItem(el)
-            if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(el)
+            checkMenu(el)
           } else {
-            const menus = el.querySelectorAll(".menu")
+            const menus = el.querySelectorAll<HTMLElement>(".menu")
             for (let j = 0; j < menus.length; j++) {
-              const menu = menus[j] as HTMLElement
-              if (this.isCanvasBgContextMenu) this.injectMenuItem(menu)
-              if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(menu)
+              checkMenu(menus[j])
             }
           }
         }
+      }
+
+      if (this.isCanvasBgContextMenu || this.isCanvasNodeContextMenu) {
+        this.isCanvasBgContextMenu = false
+        this.isCanvasNodeContextMenu = false
       }
     })
 
@@ -115,12 +130,8 @@ export default class ContextCanvasPlugin extends Plugin {
     item.onmouseenter = () => item.addClass("selected")
     item.onmouseleave = () => item.removeClass("selected")
 
-    const icon = createSpan({ cls: "menu-item-icon" })
-    setIcon(icon, "cloud")
-    item.appendChild(icon)
-
-    const titleEl = createSpan({ cls: "menu-item-title", text: t("insertCloudNode") })
-    item.appendChild(titleEl)
+    item.createDiv({ cls: "menu-item-icon" })
+    item.createDiv({ cls: "menu-item-title", text: t("insertCloudNode") })
 
     group.appendChild(item)
   }
