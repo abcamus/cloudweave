@@ -33,8 +33,8 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
         dd.addOption("claude", "Claude")
         dd.addOption("local", t("settingsProviderLocal"))
         dd.setValue(config.provider)
-        dd.onChange((val: "openai" | "gemini" | "claude" | "local") => {
-          config.provider = val
+        dd.onChange((val: string) => {
+          config.provider = val as "openai" | "gemini" | "claude" | "local"
           this.saveConfig(config)
         })
       })

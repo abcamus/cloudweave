@@ -61,11 +61,12 @@ export class SpatialSemanticEncoder {
     if (nodes.length === 0) return []
 
     const sorted = [...nodes].sort((a, b) => a.y - b.y)
+    const first = sorted[0]!
     const rows: { y: number; nodes: CanvasNode[] }[] = []
-    let currentRow = { y: sorted[0].y, nodes: [sorted[0]] }
+    let currentRow = { y: first.y, nodes: [first] }
 
     for (let i = 1; i < sorted.length; i++) {
-      const node = sorted[i]
+      const node = sorted[i]!
       if (Math.abs(node.y - currentRow.y) <= this.rowThreshold) {
         currentRow.nodes.push(node)
       } else {
@@ -206,7 +207,7 @@ export class SpatialSemanticEncoder {
     const match = content.match(META_COMMENT_RE)
     if (!match) return null
     try {
-      return JSON.parse(match[1]) as CloudNodeMeta
+      return JSON.parse(match[1]!) as CloudNodeMeta
     } catch {
       return null
     }

@@ -49,8 +49,8 @@ export class CloudFilePickerModal extends Modal {
           dd.addOption(c, cloudLabels[c] || c)
         }
         dd.setValue(this.currentCloud)
-        dd.onChange(async (val: CloudDiskType) => {
-          this.currentCloud = val
+        dd.onChange(async (val: string) => {
+          this.currentCloud = val as CloudDiskType
           this.currentPath = "/"
           this.searchQuery = ""
           await this.loadFiles()
@@ -91,9 +91,9 @@ export class CloudFilePickerModal extends Modal {
 
     addCrumb(t("rootDir"), "/", parts.length === 0)
     for (let i = 0; i < parts.length; i++) {
-      accum.push(parts[i])
+      accum.push(parts[i]!)
       nav.createSpan({ text: " / " })
-      addCrumb(parts[i], "/" + accum.join("/"), i === parts.length - 1)
+      addCrumb(parts[i]!, "/" + accum.join("/"), i === parts.length - 1)
     }
   }
 

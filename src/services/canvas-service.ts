@@ -144,18 +144,18 @@ export class CanvasService {
 
     const matrix = ts.match(/matrix\(([^)]+)\)/)
     if (matrix) {
-      const p = matrix[1].split(",").map(v => parseFloat(v.trim()))
+      const p = matrix[1]!.split(",").map(v => parseFloat(v.trim()))
       if (p.length >= 6) {
         tx = p[4] || 0
         ty = p[5] || 0
-        scale = Math.abs(p[0]) || 1
+        scale = Math.abs(p[0]!) || 1
       }
     } else {
       const m = ts.replace(/\s+/g, " ").match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/)
       if (m) {
-        tx = parseFloat(m[1]) || 0
-        ty = parseFloat(m[2]) || 0
-        scale = parseFloat(m[3]) || 1
+        tx = parseFloat(m[1]!) || 0
+        ty = parseFloat(m[2]!) || 0
+        scale = parseFloat(m[3]!) || 1
       }
     }
 
@@ -199,14 +199,14 @@ export class CanvasService {
 
       const matrix = ts.match(/matrix\(([^)]+)\)/)
       if (matrix) {
-        const p = matrix[1].split(",").map(v => parseFloat(v.trim()))
+      const p = matrix[1]!.split(",").map(v => parseFloat(v.trim()))
         if (p.length >= 6) {
-          scale = Math.abs(p[0])
+          scale = Math.abs(p[0]!)
         }
       } else {
         const m = ts.replace(/\s+/g, " ").match(/translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)/)
         if (m) {
-          scale = parseFloat(m[3]) || 1
+          scale = parseFloat(m[3]!) || 1
         }
       }
 

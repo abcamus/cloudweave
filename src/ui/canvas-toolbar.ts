@@ -20,9 +20,9 @@ const CC_CLOUD_MARKER = "cc-cloud-insert-btn"
 type CanvasView = ItemView & { contentEl?: HTMLElement }
 
 export class CanvasToolbar {
-  private inputPopover: HTMLElement
-  private questionInput: HTMLTextAreaElement
-  private pollInterval: number
+  private inputPopover!: HTMLElement
+  private questionInput!: HTMLTextAreaElement
+  private pollInterval!: number
   private currentSelection: string[] = []
   private config: LLMConfig
 
@@ -257,7 +257,7 @@ export class CanvasToolbar {
     if (!nodeId) return
 
     try {
-      const prompt = PRESET_PROMPTS[action]
+      const prompt = PRESET_PROMPTS[action]!
       const context = await this.aiService.buildContext(ids)
       const answer = await this.aiService.queryLLM(context, prompt, this.config)
       await this.updateAINodeContent(nodeId, answer)

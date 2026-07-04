@@ -444,7 +444,7 @@ export class ContextAIService {
     const match = content.match(META_COMMENT_RE)
     if (!match) return null
     try {
-      return JSON.parse(match[1]) as CloudNodeMeta
+      return JSON.parse(match[1]!) as CloudNodeMeta
     } catch {
       return null
     }

@@ -20,7 +20,7 @@ export class TimestampCommand {
 
     const note: TimestampNote = {
       id: `ts-${Date.now()}`,
-      nodeId: nodeIds[0],
+      nodeId: nodeIds[0]!,
       time: seconds,
       label: this.formatTime(seconds),
       createdAt: Date.now(),

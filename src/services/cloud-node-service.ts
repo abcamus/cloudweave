@@ -48,7 +48,7 @@ export class CloudNodeService {
     if (!match) return null
 
     try {
-      return JSON.parse(match[1]) as CloudNodeMeta
+      return JSON.parse(match[1]!) as CloudNodeMeta
     } catch {
       return null
     }
@@ -97,7 +97,7 @@ export class CloudNodeService {
     })
 
     for (let i = 0; i < children.length; i++) {
-      const item = children[i]
+      const item = children[i]!
       const col = i % cols
       const row = Math.floor(i / cols)
 

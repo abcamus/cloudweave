@@ -19,11 +19,11 @@ interface CanvasLeafView {
 }
 
 export default class ContextCanvasPlugin extends Plugin {
-  private canvasService: CanvasService
-  private syncVault: SyncVaultBridge
-  private aiService: ContextAIService
-  private insertCloudNodeCmd: InsertCloudNodeCommand
-  private timestampCmd: TimestampCommand
+  private canvasService!: CanvasService
+  private syncVault!: SyncVaultBridge
+  private aiService!: ContextAIService
+  private insertCloudNodeCmd!: InsertCloudNodeCommand
+  private timestampCmd!: TimestampCommand
   private toolbar: CanvasToolbar | null = null
   private menuObserver: MutationObserver | null = null
   private isCanvasBgContextMenu = false
@@ -94,7 +94,7 @@ export default class ContextCanvasPlugin extends Plugin {
           } else {
             const menus = el.querySelectorAll<HTMLElement>(".menu")
             for (let j = 0; j < menus.length; j++) {
-              checkMenu(menus[j])
+              checkMenu(menus[j]!)
             }
           }
         }
@@ -183,11 +183,11 @@ export default class ContextCanvasPlugin extends Plugin {
       if (!href?.startsWith("cc-timestamp://")) return
 
       const [, nodeId, timeStr] = href.split("/")
-      const time = parseFloat(timeStr)
+      const time = parseFloat(timeStr!)
       if (isNaN(time)) return
 
       e.preventDefault()
-      void this.jumpToTimestamp(nodeId, time)
+      void this.jumpToTimestamp(nodeId!, time)
     })
   }
 

@@ -12,14 +12,14 @@ export function initLocale() {
 }
 
 export function t(key: string, ...args: string[]): string {
-  const dict = locales[lang] || locales.zh
-  let str = dict[key]
+  const dict = locales[lang] ?? locales.zh
+  let str = dict![key]
   if (!str) {
-    str = locales.zh[key] || key
+    str = locales.zh![key] || key
   }
   if (args.length > 0) {
     args.forEach((arg, i) => {
-      str = str.replace(`{${i}}`, arg)
+      str = str!.replace(`{${i}}`, arg)
     })
   }
   return str

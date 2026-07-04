@@ -5,11 +5,11 @@ import { ContextAIService } from "../services/context-ai-service"
 import { LLMConfig } from "../types"
 
 export class AIPanel {
-  private container: HTMLElement
-  private questionEl: HTMLTextAreaElement
-  private answerEl: HTMLElement
-  private sendBtn: HTMLElement
-  private contextInfoEl: HTMLElement
+  private container!: HTMLElement
+  private questionEl!: HTMLTextAreaElement
+  private answerEl!: HTMLElement
+  private sendBtn!: HTMLElement
+  private contextInfoEl!: HTMLElement
   private config: LLMConfig
   private selectionObserver: number | undefined
 
