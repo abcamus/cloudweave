@@ -22,11 +22,12 @@ export class CloudNodeService {
     const label = file.name.replace(/\.[^.]+$/, "")
 
     const isWide = category === "video" || category === "audio"
+    const w = category === "video" ? 640 : isWide ? 480 : 220
+    const h = category === "video" ? 360 : isWide ? 200 : 280
     await this.canvasService.addCloudNode(
       nodeId, label, content, color,
       undefined,
-      isWide ? 320 : 220,
-      isWide ? 200 : 300,
+      w, h,
     )
     new Notice(t("inserted", file.name))
   }
@@ -66,16 +67,15 @@ export class CloudNodeService {
 
     const result = await this.syncVault.listFiles(folder.path, folder.cloudType, 100, 0)
     const children = result.files.filter(f => !f.isdir)
-    const subdirs = result.files.filter(f => f.isdir)
 
     const groupPad = 24
     const headerH = 44
     const gap = 16
     const cols = 3
-    const cardW = 220
-    const cardH = 120
+    const cardW = 240
+    const cardH = 140
 
-    const totalCards = children.length + subdirs.length
+    const totalCards = children.length
     const rows = Math.max(1, Math.ceil(totalCards / cols))
     const groupW = groupPad * 2 + cols * cardW + (cols - 1) * gap
     const contentH = rows * cardH + (rows - 1) * gap
@@ -96,10 +96,8 @@ export class CloudNodeService {
       text: `📁 ${folder.name}\n${cloudLabel}`,
     })
 
-    const allItems = [...subdirs, ...children]
-
-    for (let i = 0; i < allItems.length; i++) {
-      const item = allItems[i]
+    for (let i = 0; i < children.length; i++) {
+      const item = children[i]
       const col = i % cols
       const row = Math.floor(i / cols)
 
@@ -107,41 +105,27 @@ export class CloudNodeService {
       const cy = gy + groupPad + headerH + row * (cardH + gap)
       const itemId = `cloud-${item.cloudType}-${item.fsid}-${Date.now()}-${i}`
 
-      if (item.isdir) {
-        data.nodes.push({
-          id: itemId,
-          x: cx,
-          y: cy,
-          width: cardW,
-          height: cardH,
-          type: "text",
-          label: item.name,
-          text: `📁 ${item.name}`,
-          color: "3",
-        })
-      } else {
-        const category = this.syncVault.getCategory(item)
-        const content = this.buildContent(item, category)
-        const color = CLOUD_NODE_COLORS[category] || "1"
+      const category = this.syncVault.getCategory(item)
+      const content = this.buildContent(item, category)
+      const color = CLOUD_NODE_COLORS[category] || "1"
 
-        data.nodes.push({
-          id: itemId,
-          x: cx,
-          y: cy,
-          width: cardW,
-          height: cardH,
-          type: "text",
-          label: item.name.replace(/\.[^.]+$/, ""),
-          text: content,
-          color,
-        })
-      }
+      data.nodes.push({
+        id: itemId,
+        x: cx,
+        y: cy,
+        width: cardW,
+        height: cardH,
+        type: "text",
+        label: item.name.replace(/\.[^.]+$/, ""),
+        text: content,
+        color,
+      })
 
     }
 
     await this.canvasService.setData(data)
     this.canvasService.scrollToNode(groupId)
-    new Notice(t("insertedFolder", folder.name, String(allItems.length)))
+    new Notice(t("insertedFolder", folder.name, String(children.length)))
   }
 
   private buildContent(file: CloudFileEntry, category: CloudFileCategory): string {
@@ -170,11 +154,10 @@ export class CloudNodeService {
       ].join("\n\n")
     } else if (category === "audio") {
       display = [
-        `# 🎧 ${file.name.replace(/\.[^.]+$/, "")}`,
+        `\`\`\`cloudaudio\n${file.cloudType}://${file.path} | ${file.name}\n\`\`\``,
+        `### 🎧 ${file.name.replace(/\.[^.]+$/, "")}`,
         `\`${cloudLabel}\` \`${sizeLabel}\``,
-        `---`,
-        `▶️ [${t("openFile")}](${cloudLink})`,
-      ].join("\n")
+      ].join("\n\n")
     } else {
       display = [
         `${icon} ${file.name}`,

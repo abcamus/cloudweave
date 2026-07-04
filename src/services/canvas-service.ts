@@ -52,8 +52,8 @@ export class CanvasService {
     content: string,
     color: string,
     pos?: { x: number; y: number },
-    width = 220,
-    height = 300,
+    width = 240,
+    height = 280,
   ): Promise<void> {
     const canvas = this.getCanvas()
     if (!canvas) return

@@ -217,4 +217,29 @@
   color: var(--text-on-accent);
 }
 
+/* ───── Cloud Node Card Styles ───── */
+.canvas-node[data-id^="cloud-"] .canvas-node-content pre code.language-cloudvideo {
+  background: #0d0d0d;
+  border: 1px solid #333;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  font-size: 14px;
+  text-align: center;
+  color: #ccc;
+}
 
+.canvas-node[data-id^="cloud-"] .canvas-node-content pre code.language-cloudaudio {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  font-size: 14px;
+  text-align: center;
+  color: #ccc;
+}
