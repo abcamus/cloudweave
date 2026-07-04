@@ -4,6 +4,12 @@ import { CANVAS_VIEW_TYPE } from "../constants"
 
 type CanvasView = ItemView & { canvas?: Canvas }
 
+interface CanvasInternal {
+  posCenter?(): { x: number; y: number }
+  getViewportCenter?(): { x: number; y: number }
+  getScroll?(): { x: number; y: number; scale: number }
+}
+
 export class CanvasService {
   private activeCanvas: Canvas | null = null
 
@@ -90,7 +96,7 @@ export class CanvasService {
   posCenter(): { x: number; y: number } {
     const canvas = this.getCanvas()
     if (canvas) {
-      const internal = (canvas as any)
+      const internal = canvas as unknown as CanvasInternal
       if (typeof internal.posCenter === "function") {
         return internal.posCenter()
       }
@@ -101,7 +107,7 @@ export class CanvasService {
   private getViewportCenter(): { x: number; y: number } {
     const canvas = this.getCanvas()
     if (canvas) {
-      const internal = (canvas as any)
+      const internal = canvas as unknown as CanvasInternal
       if (typeof internal.getViewportCenter === "function") {
         const pos = internal.getViewportCenter()
         if (pos && typeof pos.x === "number") {
@@ -126,7 +132,8 @@ export class CanvasService {
     if (!wrapper) return { x: 200, y: 200 }
 
     const zoomArea = Array.from(wrapper.children).find((el) => {
-      const style = (el as HTMLElement).style.transform || window.getComputedStyle(el as HTMLElement).transform
+      const e = el as HTMLElement
+      const style = e.style.transform || window.getComputedStyle(e).transform
       return style && style !== "none"
     }) as HTMLElement | undefined
 
