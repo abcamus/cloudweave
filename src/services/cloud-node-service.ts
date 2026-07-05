@@ -14,7 +14,11 @@ export class CloudNodeService {
     private syncVault: SyncVaultBridge
   ) {}
 
-  async insertCloudFile(file: CloudFileEntry) {
+  get viewportCenter(): { x: number; y: number } {
+    return this.canvasService.posCenter()
+  }
+
+  async insertCloudFile(file: CloudFileEntry, pos?: { x: number; y: number }) {
     const category = this.syncVault.getCategory(file)
     const content = this.buildContent(file, category)
     const nodeId = `cloud-${file.cloudType}-${file.fsid}-${Date.now()}`
@@ -24,9 +28,10 @@ export class CloudNodeService {
     const isWide = category === "video" || category === "audio"
     const w = category === "video" ? 640 : isWide ? 480 : 220
     const h = category === "video" ? 360 : isWide ? 200 : 280
+
     await this.canvasService.addCloudNode(
       nodeId, label, content, color,
-      undefined,
+      pos,
       w, h,
     )
     new Notice(t("inserted", file.name))
@@ -81,7 +86,7 @@ export class CloudNodeService {
     const contentH = rows * cardH + (rows - 1) * gap
     const groupH = groupPad * 2 + headerH + contentH
 
-    const ref = pos || this.canvasService.posCenter()
+    let ref = pos || this.canvasService.posCenter()
     const gx = ref.x
     const gy = ref.y
 

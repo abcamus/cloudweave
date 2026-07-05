@@ -148,8 +148,8 @@ export class CanvasToolbar {
     if (!cardMenu) return
     if (cardMenu.querySelector(`.${CC_CLOUD_MARKER}`)) return
 
-    const btn = cardMenu.createEl("button", {
-      cls: `clickable-icon canvas-card-menu-button ${CC_CLOUD_MARKER}`,
+    const btn = cardMenu.createDiv({
+      cls: `canvas-card-menu-button mod-draggable ${CC_CLOUD_MARKER}`,
       attr: { "aria-label": t("insertCloudNode"), "data-tooltip-position": "top" },
     })
     setIcon(btn, "cloud")
@@ -171,7 +171,7 @@ export class CanvasToolbar {
 
     const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault)
     const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
-      void cloudNodeService.insertCloudFile(file)
+      return cloudNodeService.insertCloudFile(file)
     }, cloudNodeService)
     modal.open()
   }

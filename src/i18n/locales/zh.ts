@@ -58,6 +58,10 @@ const zh: Record<string, string> = {
   insertFolderShallow: "一层深",
   insertFolderDeep: "两层深",
   insertedFolder: "已插入文件夹: {0}（{1} 项）",
+  gridView: "网格视图",
+  listView: "列表视图",
+  insertSelected: "插入选中 ({0})",
+  selectedCount: "已选 {0} 个文件",
 }
 
 export default zh

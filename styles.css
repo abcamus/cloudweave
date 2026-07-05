@@ -4,22 +4,105 @@
 }
 
 /* ───── Cloud File Picker ───── */
-.cc-cloud-selector {
-  padding: 8px 0;
+
+/* Unified toolbar */
+.cc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.cc-search-bar {
-  padding: 8px 0;
+.cc-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
-.cc-breadcrumb {
-  padding: 8px 12px;
+.cc-toolbar-left select.dropdown {
+  flex-shrink: 0;
+  width: auto;
+  max-width: 100px;
+  font-size: 13px;
+  padding: 2px 20px 2px 6px;
+}
+
+.cc-toolbar-breadcrumb {
+  display: flex;
+  align-items: center;
   font-size: 13px;
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.cc-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.cc-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.cc-toolbar-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.cc-toolbar-btn.cc-active {
+  color: var(--interactive-accent);
+  background: var(--background-modifier-active);
+}
+
+.cc-toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Search row */
+.cc-search-row {
+  display: none;
+  padding: 4px 12px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.cc-search-row.cc-open {
+  display: block;
+}
+
+.cc-toolbar-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cc-toolbar-search-input:focus {
+  border-color: var(--interactive-accent);
+}
+
+/* Breadcrumb crumbs */
 .cc-crumb-link {
   cursor: pointer;
   color: var(--text-accent);
@@ -30,10 +113,29 @@
   color: var(--text-normal);
 }
 
+/* File list */
 .cc-file-list {
   max-height: 400px;
   overflow-y: auto;
   padding: 4px 0;
+  scrollbar-width: thin;
+}
+
+.cc-file-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cc-file-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cc-file-list::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-bg, var(--background-modifier-border));
+  border-radius: 3px;
+}
+
+.cc-file-list::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-active-thumb-bg, var(--text-muted));
 }
 
 .cc-file-row {
@@ -49,12 +151,52 @@
   background: var(--background-modifier-hover);
 }
 
+.cc-file-row.cc-selected {
+  background: var(--background-modifier-active);
+  outline: 1px solid var(--interactive-accent);
+}
+
+.cc-file-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--interactive-accent);
+  flex-shrink: 0;
+}
+
+.cc-file-row.cc-selected .cc-file-checkbox {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
 .cc-file-name {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cc-file-name svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.cc-file-type-icon {
+  display: flex;
+  align-items: center;
 }
 
 .cc-file-size {
@@ -64,35 +206,134 @@
   white-space: nowrap;
 }
 
-.cc-folder-insert-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-left: 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-muted);
-  opacity: 0;
-  transition: opacity 0.15s, background 0.15s;
-  flex-shrink: 0;
-}
-
-.cc-file-row:hover .cc-folder-insert-btn {
-  opacity: 1;
-}
-
-.cc-folder-insert-btn:hover {
-  background: var(--background-modifier-hover);
-  color: var(--interactive-accent);
-}
-
 .cc-loading,
 .cc-empty {
   text-align: center;
   padding: 24px;
   color: var(--text-muted);
+}
+
+/* ───── Grid view ───── */
+.cc-file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 8px;
+}
+
+.cc-grid-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px 8px;
+  border-radius: 8px;
+  border: 1.5px solid var(--background-modifier-border);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--background-primary);
+}
+
+.cc-grid-card:hover {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.cc-grid-card.cc-selected {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-active);
+}
+
+.cc-grid-preview {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.cc-grid-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc-grid-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--text-muted);
+}
+
+.cc-grid-checkbox {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid var(--text-muted);
+  color: var(--interactive-accent);
+  background: var(--background-primary);
+}
+
+.cc-grid-card.cc-selected .cc-grid-checkbox {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.cc-grid-name {
+  font-size: 11px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  color: var(--text-normal);
+}
+
+
+/* Footer */
+.cc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.cc-footer-count {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cc-insert-btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.cc-insert-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.cc-insert-btn:hover:not(:disabled) {
+  opacity: 0.85;
 }
 
 /* ───── AI Items in .canvas-card-menu ───── */

@@ -30,7 +30,7 @@ export class InsertCloudNodeCommand {
     }
 
     const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
-      void this.cloudNodeService.insertCloudFile(file)
+      return this.cloudNodeService.insertCloudFile(file)
     }, this.cloudNodeService)
     modal.open()
   }

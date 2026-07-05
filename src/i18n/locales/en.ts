@@ -58,6 +58,10 @@ const en: Record<string, string> = {
   insertFolderShallow: "One level deep",
   insertFolderDeep: "Two levels deep",
   insertedFolder: "Inserted folder: {0} ({1} items)",
+  gridView: "Grid view",
+  listView: "List view",
+  insertSelected: "Insert selected ({0})",
+  selectedCount: "{0} file(s) selected",
 }
 
 export default en
