@@ -104,12 +104,12 @@ export class CloudFilePickerModal extends Modal {
 
   private renderFolderIcon(parent: HTMLElement) {
     const ns = "http://www.w3.org/2000/svg"
-    const svg = document.createElementNS(ns, "svg")
+    const svg = activeDocument.createElementNS(ns, "svg")
     svg.setAttribute("viewBox", "0 0 24 24")
     svg.setAttribute("width", "100%")
     svg.setAttribute("height", "100%")
     svg.addClass("svg-icon")
-    const path = document.createElementNS(ns, "path")
+    const path = activeDocument.createElementNS(ns, "path")
     path.setAttribute("d", "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z")
     path.setAttribute("fill", "none")
     path.setAttribute("stroke", "currentColor")
