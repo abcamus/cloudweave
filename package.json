@@ -1,6 +1,6 @@
 {
   "name": "cloudweave",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Cloud-storage file nodes + AI analysis for Canvas.",
   "main": "main.js",
   "scripts": {
