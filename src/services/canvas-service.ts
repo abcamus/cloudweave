@@ -93,6 +93,58 @@ export class CanvasService {
     this.scrollToNode(nodeId)
   }
 
+  async layoutGrid(cols = 4): Promise<void> {
+    const data = await this.getData()
+    if (!data) return
+
+    const nodes = data.nodes.filter(n => n.type !== "group")
+    if (nodes.length < 2) return
+
+    nodes.sort((a, b) => {
+      const yd = a.y - b.y
+      return Math.abs(yd) > 10 ? yd : a.x - b.x
+    })
+
+    const gapX = 40, gapY = 40
+    const startX = Math.min(...nodes.map(n => n.x))
+    const startY = Math.min(...nodes.map(n => n.y))
+
+    const colWidths: number[] = Array.from({ length: cols }, () => 0)
+    for (let i = 0; i < nodes.length; i++) {
+      colWidths[i % cols] = Math.max(colWidths[i % cols]!, nodes[i]!.width)
+    }
+
+    const rowHeights: number[] = []
+    for (let i = 0; i < nodes.length; i += cols) {
+      let maxH = 0
+      for (let j = 0; j < cols && i + j < nodes.length; j++) {
+        maxH = Math.max(maxH, nodes[i + j]!.height)
+      }
+      rowHeights.push(maxH)
+    }
+
+    let cursorX = startX
+    let cursorY = startY
+    for (let i = 0; i < nodes.length; i++) {
+      const col = i % cols
+      const n = nodes[i]!
+      n.x = cursorX
+      n.y = cursorY
+
+      if (col + 1 < cols && i + 1 < nodes.length) {
+        cursorX += (colWidths[col] || n.width) + gapX
+      }
+      if (col + 1 >= cols || i + 1 >= nodes.length) {
+        cursorX = startX
+        if (i + 1 < nodes.length) {
+          cursorY += (rowHeights[Math.floor(i / cols)] || 0) + gapY
+        }
+      }
+    }
+
+    await this.setData(data)
+  }
+
   posCenter(): { x: number; y: number } {
     const canvas = this.getCanvas()
     if (canvas) {
@@ -177,7 +229,7 @@ export class CanvasService {
 
   scrollToNode(nodeId: string) {
     window.setTimeout(() => {
-      const nodeEl = activeDocument.querySelector(`.canvas-node[data-id="${nodeId}"]`) as HTMLElement
+      const nodeEl = activeDocument.querySelector(`[data-id="${nodeId}"], [data-node-id="${nodeId}"], #${CSS.escape(nodeId)}`) as HTMLElement
       if (!nodeEl) return
 
     const wrapper = activeDocument.querySelector(".canvas-wrapper") as HTMLElement

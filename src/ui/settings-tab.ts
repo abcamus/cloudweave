@@ -1,18 +1,20 @@
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian"
+import { App, PluginSettingTab, Setting } from "obsidian"
 import { t } from "../i18n"
 import { LLMConfig } from "../types"
+import ContextCanvasPlugin from "../main"
 
 export class ContextCanvasSettingTab extends PluginSettingTab {
-  constructor(app: App, private plugin: Plugin) {
+  constructor(app: App, private plugin: ContextCanvasPlugin) {
     super(app, plugin)
   }
 
   getSettingDefinitions(): { name: string; desc?: string }[] {
     return [
-      { name: t("settingsProvider"), desc: t("settingsProviderDesc") },
-      { name: t("settingsApiKey"), desc: t("settingsApiKeyDesc") },
-      { name: t("settingsModel"), desc: t("settingsModelDesc") },
-      { name: t("settingsEndpoint"), desc: t("settingsEndpointDesc") },
+      { name: t("settingsProvider") },
+      { name: t("settingsApiKey") },
+      { name: t("settingsModel") },
+      { name: t("settingsEndpoint") },
+      { name: "Canvas card style" },
     ]
   }
 
@@ -72,6 +74,40 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
         txt.onChange((val) => {
           config.endpoint = val || undefined
           this.saveConfig(config)
+        })
+      })
+
+    new Setting(containerEl).setName("Card style").setHeading()
+
+    new Setting(containerEl)
+      .setName("Canvas card style")
+      .setDesc("Choose the visual style for canvas nodes")
+      .addDropdown((dd) => {
+        dd.addOption("default", "Obsidian default")
+        dd.addOption("notion", "Notion (clean shadow)")
+        dd.addOption("glass", "Linear (frosted glass)")
+        dd.addOption("sticky", "Milanote (sticky note)")
+        dd.addOption("accent", "Figma (border accent)")
+        dd.setValue(this.plugin.settings.cardStyle)
+        dd.onChange(async (val: string) => {
+          this.plugin.settings.cardStyle = val
+          await this.plugin.saveSettings()
+          this.plugin.applyCardStyle(val)
+        })
+      })
+
+    new Setting(containerEl)
+      .setName("Image card style")
+      .setDesc("Visual style for image nodes in canvas")
+      .addDropdown((dd) => {
+        dd.addOption("poster", "Poster (cover + caption overlay)")
+        dd.addOption("frame", "Frame (polaroid border)")
+        dd.addOption("masonry", "Masonry (rounded + shadow)")
+        dd.setValue(this.plugin.settings.imageCardStyle)
+        dd.onChange(async (val: string) => {
+          this.plugin.settings.imageCardStyle = val
+          await this.plugin.saveSettings()
+          this.plugin.applyImageCardStyle(val)
         })
       })
   }

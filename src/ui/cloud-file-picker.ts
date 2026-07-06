@@ -18,6 +18,7 @@ export class CloudFilePickerModal extends Modal {
   private searchRowEl!: HTMLElement
   private searchInputEl!: HTMLInputElement
   private viewToggleEl!: HTMLElement
+  private selectAllBtn!: HTMLElement
   private footerEl: HTMLElement | null = null
 
   constructor(
@@ -80,6 +81,12 @@ export class CloudFilePickerModal extends Modal {
         void this.loadFiles()
       }
     })
+
+    const selectAllBtn = right.createSpan({ cls: "cc-toolbar-btn cc-select-all-btn" })
+    setIcon(selectAllBtn, "check-square")
+    selectAllBtn.setAttr("aria-label", "Select all")
+    selectAllBtn.onClickEvent(() => this.toggleSelectAll())
+    this.selectAllBtn = selectAllBtn
 
     this.viewToggleEl = right.createSpan({ cls: "cc-toolbar-btn" })
     setIcon(this.viewToggleEl, "grid")
@@ -227,6 +234,9 @@ export class CloudFilePickerModal extends Modal {
     }
 
     this.renderFooter()
+
+    const allSelected = this.files.length > 0 && this.files.every(f => this.selected.has(f.fsid))
+    this.selectAllBtn?.classList.toggle("cc-active", allSelected)
   }
 
   private renderList(sorted: CloudFileEntry[], list: HTMLElement) {
@@ -322,7 +332,19 @@ export class CloudFilePickerModal extends Modal {
       this.selected.add(key)
       el.addClass("cc-selected")
     }
+    const cb = el.querySelector<HTMLElement>(".cc-file-checkbox, .cc-grid-checkbox")
+    if (cb) cb.textContent = this.selected.has(key) ? "✓" : ""
     this.updateFooter()
+  }
+
+  private toggleSelectAll() {
+    const allSelected = this.files.every(f => this.selected.has(f.fsid))
+    if (allSelected) {
+      this.selected.clear()
+    } else {
+      this.selected = new Set(this.files.map(f => f.fsid))
+    }
+    this.render()
   }
 
   private renderFooter() {
@@ -330,10 +352,10 @@ export class CloudFilePickerModal extends Modal {
     this.footerEl = footer
 
     const count = footer.createSpan({ cls: "cc-footer-count" })
-    count.textContent = t("selectedCount", "0")
+    count.textContent = t("selectedCount", String(this.selected.size))
 
     const btn = footer.createEl("button", { cls: "cc-insert-btn" })
-    btn.textContent = t("insertSelected", "0")
+    btn.textContent = t("insertSelected", String(this.selected.size))
     btn.onClickEvent(() => this.insertAllSelected())
   }
 
@@ -354,22 +376,8 @@ export class CloudFilePickerModal extends Modal {
         }
       }
     } else {
-      const center = cns.viewportCenter
-      let yOff = 0
-      for (const file of this.files) {
-        if (!this.selected.has(file.fsid)) continue
-        const pos = { x: center.x, y: center.y + yOff }
-        if (file.isdir) {
-          await cns.insertFolder(file, 1, pos)
-          yOff += 200
-        } else {
-          await cns.insertCloudFile(file, pos)
-          const ext = file.name.split(".").pop()?.toLowerCase() || ""
-          const isWide = ["mp4", "mkv", "avi", "mov", "mp3", "wav", "flac"].includes(ext)
-          const h = isWide ? (["mp4", "mkv", "avi", "mov"].includes(ext) ? 360 : 200) : 280
-          yOff += h + 20
-        }
-      }
+      const selected = this.files.filter(f => this.selected.has(f.fsid))
+      await cns.batchInsert(selected)
     }
     this.close()
   }

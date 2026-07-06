@@ -484,3 +484,232 @@
   text-align: center;
   color: #ccc;
 }
+
+/* ───── Card Styles ───── */
+
+/* Notion — clean shadow card */
+body.cc-card-style-notion .canvas-node-container {
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06) !important;
+}
+body.cc-card-style-notion .canvas-node.is-focused .canvas-node-container {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08) !important;
+}
+
+/* Linear — frosted glass */
+body.cc-card-style-glass .canvas-node-container {
+  border-radius: 12px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  background: rgba(var(--background-primary-rgb), 0.55) !important;
+}
+body.cc-card-style-glass .canvas-node.is-focused .canvas-node-container {
+  border-color: var(--interactive-accent) !important;
+}
+
+/* Milanote — sticky note */
+body.cc-card-style-sticky .canvas-node-container {
+  border-radius: 3px !important;
+  border: 1px solid var(--background-modifier-border-hover) !important;
+  background: var(--background-secondary) !important;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.04) !important;
+}
+
+/* Figma — border accent */
+body.cc-card-style-accent .canvas-node-container {
+  border-radius: 6px !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  overflow: hidden !important;
+}
+body.cc-card-style-accent .canvas-node-container::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--interactive-accent);
+}
+
+/* ───── Ebook Card ───── */
+.canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border-left: 8px solid var(--color-orange) !important;
+  border-radius: 2px 6px 6px 2px !important;
+  background: linear-gradient(to right, rgba(var(--color-orange-rgb), 0.06), transparent 8px) !important;
+}
+
+.canvas-node.mod-canvas-color-6 .canvas-node-content h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0 0 8px;
+  color: var(--text-normal);
+  border: none;
+  padding: 0;
+}
+
+.canvas-node.mod-canvas-color-6 .canvas-node-content hr {
+  margin: 4px 0 8px;
+  border-color: var(--background-modifier-border);
+}
+
+.canvas-node.mod-canvas-color-6 .canvas-node-content pre {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.canvas-node.mod-canvas-color-6 .canvas-node-content pre code {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Suppress accent bar for ebook cards */
+body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container::before {
+  display: none;
+}
+
+/* Make ebook card styles override selected card style */
+body.cc-card-style-notion .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-card-style-glass .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-card-style-sticky .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border-left: 8px solid var(--color-orange) !important;
+  border-radius: 2px 6px 6px 2px !important;
+  background: linear-gradient(to right, rgba(var(--color-orange-rgb), 0.06), transparent 8px) !important;
+}
+
+/* ───── Image Card Styles ───── */
+
+/* Shared: use --canvas-node-height (set by Obsidian) instead of 100% chain */
+.canvas-node.mod-canvas-color-5 .canvas-node-content {
+  padding: 0 !important;
+  overflow: hidden;
+  height: var(--canvas-node-height, 300px) !important;
+}
+
+.canvas-node.mod-canvas-color-5 .canvas-node-content .markdown-preview-sizer {
+  padding: 0 !important;
+  min-height: var(--canvas-node-height, 300px) !important;
+}
+
+/* Image fills container width by default */
+.canvas-node.mod-canvas-color-5 .canvas-node-content img {
+  display: block;
+  width: 100%;
+}
+
+/* Remove default paragraph margins */
+.canvas-node.mod-canvas-color-5 .canvas-node-content p {
+  margin: 0;
+}
+
+/* ─── Image card base (shared) ─── */
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5 .canvas-node-content,
+body.cc-image-style-frame .canvas-node.mod-canvas-color-5 .canvas-node-content,
+body.cc-image-style-masonry .canvas-node.mod-canvas-color-5 .canvas-node-content {
+  position: relative;
+  overflow: hidden;
+}
+
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5 .canvas-node-content img,
+body.cc-image-style-frame .canvas-node.mod-canvas-color-5 .canvas-node-content img,
+body.cc-image-style-masonry .canvas-node.mod-canvas-color-5 .canvas-node-content img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5 .canvas-node-content em,
+body.cc-image-style-frame .canvas-node.mod-canvas-color-5 .canvas-node-content em,
+body.cc-image-style-masonry .canvas-node.mod-canvas-color-5 .canvas-node-content em {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* ─── Poster ─── */
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5 .canvas-node-container {
+  overflow: hidden;
+}
+
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5:hover .canvas-node-content img {
+  transition: transform 0.25s ease;
+  transform: scale(1.04);
+}
+
+body.cc-image-style-poster .canvas-node.mod-canvas-color-5 .canvas-node-content em {
+  background: linear-gradient(transparent, rgba(0,0,0,0.55));
+  color: #fff;
+  font-style: normal;
+  font-size: 12px;
+  padding: 20px 10px 8px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  z-index: 1;
+}
+
+/* ─── Frame (polaroid) ─── */
+body.cc-image-style-frame .canvas-node.mod-canvas-color-5 .canvas-node-container {
+  background: var(--background-primary) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+  border: 8px solid var(--background-primary) !important;
+  border-bottom-width: 4px !important;
+  border-radius: 2px !important;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+body.cc-image-style-frame .canvas-node.mod-canvas-color-5 .canvas-node-content em {
+  background: var(--background-primary);
+  color: var(--text-muted);
+  font-style: normal;
+  font-size: 11px;
+  padding: 2px 8px;
+  text-align: center;
+}
+
+/* ─── Masonry ─── */
+body.cc-image-style-masonry .canvas-node.mod-canvas-color-5 .canvas-node-container {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  border: none !important;
+}
+
+body.cc-image-style-masonry .canvas-node.mod-canvas-color-5 .canvas-node-content em {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-style: normal;
+  font-size: 12px;
+  padding: 6px 10px 8px;
+}
+
+/* Override card styles for image cards — image cards keep their own look */
+body.cc-card-style-notion .canvas-node.mod-canvas-color-5 .canvas-node-container,
+body.cc-card-style-glass .canvas-node.mod-canvas-color-5 .canvas-node-container,
+body.cc-card-style-sticky .canvas-node.mod-canvas-color-5 .canvas-node-container,
+body.cc-card-style-accent .canvas-node.mod-canvas-color-5 .canvas-node-container {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+body.cc-card-style-notion .canvas-node.mod-canvas-color-5.is-focused .canvas-node-container {
+  box-shadow: none !important;
+}

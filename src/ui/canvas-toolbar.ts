@@ -16,6 +16,7 @@ const PRESET_PROMPTS: Record<string, string> = {
 
 const CC_MENU_MARKER = "cc-ai-menu-items"
 const CC_CLOUD_MARKER = "cc-cloud-insert-btn"
+const CC_LAYOUT_MARKER = "cc-layout-btn"
 
 type CanvasView = ItemView & { contentEl?: HTMLElement }
 
@@ -86,7 +87,7 @@ export class CanvasToolbar {
   }
 
   private startPolling() {
-    this.pollInterval = window.setInterval(() => this.poll(), 500)
+    this.pollInterval = window.setInterval(() => this.poll(), 1000)
   }
 
   private getCanvasView(): CanvasView | null {
@@ -120,6 +121,7 @@ export class CanvasToolbar {
     }
 
     this.injectCloudButton()
+    this.injectLayoutButton()
 
     const menuEl = this.getCardMenu()
     if (!menuEl) {
@@ -154,6 +156,26 @@ export class CanvasToolbar {
     })
     setIcon(btn, "cloud")
     btn.onClickEvent(() => this.openCloudPicker())
+  }
+
+  private injectLayoutButton() {
+    const controls = activeDocument.querySelector(".canvas-controls")
+    if (!controls) return
+    if (controls.querySelector(`.${CC_LAYOUT_MARKER}`)) {
+      return
+    }
+
+    const group = createDiv({ cls: "canvas-control-group mod-raised" })
+    const btn = group.createDiv({
+      cls: `canvas-control-item ${CC_LAYOUT_MARKER}`,
+      attr: { "aria-label": "Auto layout", "data-tooltip-position": "left" },
+    })
+    setIcon(btn, "grid")
+    controls.appendChild(group)
+
+    btn.onClickEvent(() => {
+      void this.canvasService.layoutGrid(4)
+    })
   }
 
   private async openCloudPicker() {

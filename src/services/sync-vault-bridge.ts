@@ -65,7 +65,10 @@ export class SyncVaultBridge {
     if (videoExts.includes(ext)) return "video"
     if (audioExts.includes(ext)) return "audio"
     if (imageExts.includes(ext)) return "image"
-    if (ext === "pdf") return "pdf"
+    const pdfExts = ["pdf"]
+    const ebookExts = ["epub", "mobi", "azw3", "azw", "djvu", "fb2", "cbr", "cbz", "prc", "lit"]
+    if (pdfExts.includes(ext)) return "ebook"
+    if (ebookExts.includes(ext)) return "ebook"
     return "other"
   }
 

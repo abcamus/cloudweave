@@ -1,6 +1,6 @@
 import { App, Notice } from "obsidian"
 import { t } from "../i18n"
-import { CloudFileEntry, CloudNodeMeta, CloudDiskType, CloudFileCategory } from "../types"
+import { CloudFileEntry, CloudNodeMeta, CloudDiskType, CloudFileCategory, CanvasData, CanvasNode } from "../types"
 import { CanvasService } from "./canvas-service"
 import { SyncVaultBridge } from "./sync-vault-bridge"
 import { CLOUD_NODE_COLORS } from "../constants"
@@ -21,13 +21,15 @@ export class CloudNodeService {
   async insertCloudFile(file: CloudFileEntry, pos?: { x: number; y: number }) {
     const category = this.syncVault.getCategory(file)
     const content = this.buildContent(file, category)
-    const nodeId = `cloud-${file.cloudType}-${file.fsid}-${Date.now()}`
+    const nodeId = `cloud-${category}-${file.cloudType}-${file.fsid}-${Date.now()}`
     const color = CLOUD_NODE_COLORS[category] || "1"
     const label = file.name.replace(/\.[^.]+$/, "")
 
     const isWide = category === "video" || category === "audio"
-    const w = category === "video" ? 640 : isWide ? 480 : 220
-    const h = category === "video" ? 360 : isWide ? 200 : 280
+    const isTall = category === "ebook"
+    const isImage = category === "image"
+    const w = category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220
+    const h = category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280
 
     await this.canvasService.addCloudNode(
       nodeId, label, content, color,
@@ -37,8 +39,165 @@ export class CloudNodeService {
     new Notice(t("inserted", file.name))
   }
 
-  async refreshNodeContent(nodeId: string): Promise<CloudNodeMeta | null> {
-    return this.parseMetaFromNode(nodeId)
+  async batchInsert(
+    files: CloudFileEntry[],
+  ): Promise<void> {
+    const data = await this.canvasService.getData()
+    if (!data) return
+
+    const center = this.viewportCenter
+    let cursorX = center.x, cursorY = center.y
+    let rowMaxH = 0, col = 0
+    const maxCols = 3
+    let firstId = ""
+    let count = 0
+
+    interface SizedItem {
+      file: CloudFileEntry
+      w: number
+      h: number
+    }
+
+    const sized: SizedItem[] = []
+    const folderCache = new Map<string, CloudFileEntry[]>()
+
+    for (const file of files) {
+      if (file.isdir) {
+        const result = await this.syncVault.listFiles(file.path, file.cloudType, 100, 0)
+        const children = result.files
+        folderCache.set(file.fsid, children)
+        const filesOnly = children.filter(c => !c.isdir)
+        const cols = 3, gap = 16, cardW = 220, cardH = 140
+        const total = filesOnly.length
+        const rows = Math.max(1, Math.ceil(total / cols))
+        const gridH = rows * cardH + (rows - 1) * gap
+        sized.push({ file, w: cols * cardW + (cols - 1) * gap, h: 80 + 16 + gridH })
+      } else {
+        const category = this.syncVault.getCategory(file)
+        const isWide = category === "video" || category === "audio"
+        const isImage = category === "image"
+        sized.push({
+          file,
+          w: category === "video" ? 640 : isImage ? 400 : isWide ? 480 : 220,
+          h: category === "video" ? 360 : isImage ? 300 : isWide ? 200 : 280,
+        })
+      }
+    }
+
+    for (const item of sized) {
+      if (item.file.isdir) {
+        const children = folderCache.get(item.file.fsid) || []
+        const nodeId = this.buildFolderTree(data, item.file, children, { x: cursorX, y: cursorY }, folderCache, 1)
+        if (!firstId) firstId = nodeId
+      } else {
+        const node = this.buildFileNode(item.file, { x: cursorX, y: cursorY })
+        data.nodes.push(node)
+        if (!firstId) firstId = node.id
+      }
+
+      rowMaxH = Math.max(rowMaxH, item.h)
+      col++
+      if (col >= maxCols) {
+        cursorX = center.x
+        cursorY += rowMaxH + 24
+        col = 0; rowMaxH = 0
+      } else {
+        cursorX += item.w + 24
+      }
+      count++
+    }
+
+    if (count === 0) return
+    await this.canvasService.setData(data)
+    if (firstId) this.canvasService.scrollToNode(firstId)
+    new Notice(t("inserted", String(count)))
+  }
+
+  private buildFileNode(file: CloudFileEntry, pos: { x: number; y: number }): CanvasNode {
+    const category = this.syncVault.getCategory(file)
+    const content = this.buildContent(file, category)
+    const nodeId = `cloud-${category}-${file.cloudType}-${file.fsid}-${Date.now()}`
+    const color = CLOUD_NODE_COLORS[category] || "1"
+    const label = file.name.replace(/\.[^.]+$/, "")
+    const isWide = category === "video" || category === "audio"
+    const isTall = category === "ebook"
+    const isImage = category === "image"
+    return {
+      id: nodeId,
+      x: pos.x, y: pos.y,
+      width: category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220,
+      height: category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280,
+      type: "text", label, text: content, color,
+    }
+  }
+
+  private buildFolderTree(
+    data: CanvasData,
+    folder: CloudFileEntry,
+    children: CloudFileEntry[],
+    pos: { x: number; y: number },
+    folderCache: Map<string, CloudFileEntry[]>,
+    depth: number,
+  ): string {
+    const folderId = `cloud-${folder.cloudType}-${folder.fsid}-${Date.now()}`
+    const cloudLabel = this.getCloudLabel(folder.cloudType)
+
+    data.nodes.push({
+      id: folderId,
+      x: pos.x, y: pos.y,
+      width: 220, height: 72,
+      type: "text",
+      label: folder.name,
+      text: `📁 ${folder.name}\n${cloudLabel}`,
+      color: "1",
+    })
+
+    const cardW = 220, cardH = 140, gap = 16
+    const cols = 3
+    const childY = pos.y + 72 + 24
+    const filesOnly = children.filter(c => !c.isdir)
+    const foldersOnly = children.filter(c => c.isdir)
+
+    for (let i = 0; i < filesOnly.length; i++) {
+      const child = filesOnly[i]!
+      const ccol = i % cols
+      const crow = Math.floor(i / cols)
+      const cx = pos.x + ccol * (cardW + gap)
+      const cy = childY + crow * (cardH + gap)
+      const node = this.buildFileNode(child, { x: cx, y: cy })
+      data.nodes.push(node)
+    }
+
+    const filesRows = Math.max(1, Math.ceil(filesOnly.length / cols))
+    const subFolderY = childY + filesRows * (cardH + gap)
+
+    for (let i = 0; i < foldersOnly.length; i++) {
+      const child = foldersOnly[i]!
+      const subChildren = depth > 0 && folderCache.has(child.fsid)
+        ? folderCache.get(child.fsid)!
+        : []
+      const ccol = i % cols
+      const crow = Math.floor(i / cols)
+      const cx = pos.x + ccol * (cardW + gap)
+      const cy = subFolderY + crow * (cardH + gap)
+
+      let subId: string
+      if (depth > 0) {
+        subId = this.buildFolderTree(data, child, subChildren, { x: cx, y: cy }, folderCache, depth - 1)
+      } else {
+        subId = `cloud-${child.cloudType}-${child.fsid}-${Date.now()}`
+        data.nodes.push({
+          id: subId, x: cx, y: cy,
+          width: cardW, height: cardH,
+          type: "text",
+          label: child.name,
+          text: `📁 ${child.name}\n${this.getCloudLabel(child.cloudType)}`,
+          color: "1",
+        })
+      }
+    }
+
+    return folderId
   }
 
   private async parseMetaFromNode(nodeId: string): Promise<CloudNodeMeta | null> {
@@ -108,11 +267,11 @@ export class CloudNodeService {
 
       const cx = gx + groupPad + col * (cardW + gap)
       const cy = gy + groupPad + headerH + row * (cardH + gap)
-      const itemId = `cloud-${item.cloudType}-${item.fsid}-${Date.now()}-${i}`
+      const itemCategory = this.syncVault.getCategory(item)
+      const itemId = `cloud-${itemCategory}-${item.cloudType}-${item.fsid}-${Date.now()}-${i}`
 
-      const category = this.syncVault.getCategory(item)
-      const content = this.buildContent(item, category)
-      const color = CLOUD_NODE_COLORS[category] || "1"
+      const content = this.buildContent(item, itemCategory)
+      const color = CLOUD_NODE_COLORS[itemCategory] || "1"
 
       data.nodes.push({
         id: itemId,
@@ -149,7 +308,7 @@ export class CloudNodeService {
     const sizeLabel = this.formatSize(file.size)
 
     let display: string
-    if (category === "image" || category === "pdf") {
+    if (category === "image") {
       display = `![](${cloudLink})\n\n_${file.name} · ${cloudLabel}_`
     } else if (category === "video") {
       display = [
@@ -163,6 +322,16 @@ export class CloudNodeService {
         `### 🎧 ${file.name.replace(/\.[^.]+$/, "")}`,
         `\`${cloudLabel}\` \`${sizeLabel}\``,
       ].join("\n\n")
+    } else if (category === "ebook") {
+      const ext = file.name.split(".").pop()?.toLowerCase() || ""
+      const parts = [
+        `# 📖 ${file.name.replace(/\.[^.]+$/, "")}`,
+        `---`,
+        `\`\`\`\n${cloudLabel} · ${sizeLabel}\n\`\`\``,
+        `[${t("openFile")}](${cloudLink})`,
+      ]
+      if (ext === "pdf") parts.unshift(`![](${cloudLink})`)
+      display = parts.join("\n\n")
     } else {
       display = [
         `${icon} ${file.name}`,
@@ -193,6 +362,6 @@ export class CloudNodeService {
   }
 
   private getCategoryIcon(cat: CloudFileCategory): string {
-    return { video: "🎬", audio: "🎧", image: "🖼️", pdf: "📄", folder: "📁", other: "📎" }[cat] || "📎"
+    return { video: "🎬", audio: "🎧", image: "🖼️", pdf: "📄", ebook: "📖", folder: "📁", other: "📎" }[cat] || "📎"
   }
 }

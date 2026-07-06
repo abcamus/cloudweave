@@ -2,7 +2,7 @@ export type CloudDiskType =
   | "aliyun" | "baidu" | "quark" | "onedrive" | "115"
   | "nutstore" | "infinicloud" | "googledrive" | "webdav"
 
-export type CloudFileCategory = "video" | "audio" | "image" | "pdf" | "folder" | "other"
+export type CloudFileCategory = "video" | "audio" | "image" | "pdf" | "ebook" | "folder" | "other"
 
 export interface CloudFileEntry {
   cloudType: CloudDiskType

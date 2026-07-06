@@ -7,6 +7,7 @@ export const CLOUD_NODE_COLORS: Record<string, string> = {
   audio: "4",
   image: "5",
   pdf: "2",
+  ebook: "6",
   folder: "1",
 }
 

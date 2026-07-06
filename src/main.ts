@@ -8,6 +8,30 @@ import { TimestampCommand } from "./commands/timestamp"
 import { CanvasToolbar } from "./ui/canvas-toolbar"
 import { ContextCanvasSettingTab } from "./ui/settings-tab"
 
+export interface PluginSettings {
+  cardStyle: string
+  imageCardStyle: string
+}
+
+export const DEFAULT_SETTINGS: PluginSettings = {
+  cardStyle: "default",
+  imageCardStyle: "poster",
+}
+
+const CARD_STYLE_CLASSES = [
+  "cc-card-style-default",
+  "cc-card-style-notion",
+  "cc-card-style-glass",
+  "cc-card-style-sticky",
+  "cc-card-style-accent",
+]
+
+const IMAGE_STYLE_CLASSES = [
+  "cc-image-style-poster",
+  "cc-image-style-frame",
+  "cc-image-style-masonry",
+]
+
 interface MenuEl {
   hide?: () => void
 }
@@ -19,6 +43,7 @@ interface CanvasLeafView {
 }
 
 export default class ContextCanvasPlugin extends Plugin {
+  settings: PluginSettings = DEFAULT_SETTINGS
   private canvasService!: CanvasService
   private syncVault!: SyncVaultBridge
   private aiService!: ContextAIService
@@ -31,6 +56,9 @@ export default class ContextCanvasPlugin extends Plugin {
 
   async onload() {
     initLocale()
+    await this.loadSettings()
+    this.applyCardStyle(this.settings.cardStyle)
+    this.applyImageCardStyle(this.settings.imageCardStyle)
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
     this.aiService = new ContextAIService(this.app, this.canvasService, this.syncVault)
@@ -71,11 +99,10 @@ export default class ContextCanvasPlugin extends Plugin {
 
     this.menuObserver = new MutationObserver((mutations) => {
       if (!activeDocument.querySelector(".canvas-wrapper")) return
+      if (!this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu) return
 
       for (const mutation of mutations) {
         if (mutation.type !== "childList") continue
-
-        const isEdgeDrag = !this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu
 
         for (let i = 0; i < mutation.addedNodes.length; i++) {
           const el = mutation.addedNodes[i] as HTMLElement
@@ -84,7 +111,8 @@ export default class ContextCanvasPlugin extends Plugin {
           const checkMenu = (menu: HTMLElement) => {
             if (this.isCanvasBgContextMenu) this.injectMenuItem(menu)
             if (this.isCanvasNodeContextMenu) this.injectAINodeMenuItems(menu)
-            if (isEdgeDrag && menu.querySelector('[data-section="action"]')) {
+            if (!this.isCanvasBgContextMenu && !this.isCanvasNodeContextMenu
+                && menu.querySelector('[data-section="action"]')) {
               this.injectMenuItem(menu)
             }
           }
@@ -100,10 +128,8 @@ export default class ContextCanvasPlugin extends Plugin {
         }
       }
 
-      if (this.isCanvasBgContextMenu || this.isCanvasNodeContextMenu) {
-        this.isCanvasBgContextMenu = false
-        this.isCanvasNodeContextMenu = false
-      }
+      this.isCanvasBgContextMenu = false
+      this.isCanvasNodeContextMenu = false
     })
 
     this.menuObserver.observe(activeDocument.body, { childList: true, subtree: true })
@@ -130,8 +156,12 @@ export default class ContextCanvasPlugin extends Plugin {
     item.onmouseenter = () => item.addClass("selected")
     item.onmouseleave = () => item.removeClass("selected")
 
-    item.createDiv({ cls: "menu-item-icon" })
-    item.createDiv({ cls: "menu-item-title", text: t("insertCloudNode") })
+    const icon = createSpan({ cls: "menu-item-icon" })
+    setIcon(icon, "cloud")
+    item.appendChild(icon)
+
+    const titleEl = createSpan({ cls: "menu-item-title", text: t("insertCloudNode") })
+    item.appendChild(titleEl)
 
     group.appendChild(item)
   }
@@ -202,8 +232,29 @@ export default class ContextCanvasPlugin extends Plugin {
     void (leaf.view as CanvasLeafView).canvas?.selectOnly?.(nodeId)
   }
 
+  async loadSettings() {
+    const raw = await this.loadData() as Partial<PluginSettings> | null
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, raw || {})
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings)
+  }
+
+  applyCardStyle(style: string) {
+    activeDocument.body.removeClass(...CARD_STYLE_CLASSES)
+    activeDocument.body.addClass(`cc-card-style-${style}`)
+  }
+
+  applyImageCardStyle(style: string) {
+    activeDocument.body.removeClass(...IMAGE_STYLE_CLASSES)
+    activeDocument.body.addClass(`cc-image-style-${style}`)
+  }
+
   onunload() {
     this.toolbar?.unmount()
     this.menuObserver?.disconnect()
+    activeDocument.body.removeClass(...CARD_STYLE_CLASSES)
+    activeDocument.body.removeClass(...IMAGE_STYLE_CLASSES)
   }
 }
