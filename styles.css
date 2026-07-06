@@ -539,9 +539,9 @@ body.cc-card-style-accent .canvas-node-container::before {
 
 /* ───── Ebook Card ───── */
 .canvas-node.mod-canvas-color-6 .canvas-node-container {
-  border-left: 8px solid var(--color-orange) !important;
-  border-radius: 2px 6px 6px 2px !important;
-  background: linear-gradient(to right, rgb(var(--color-orange-rgb), 0.06), transparent 8px) !important;
+  border-left: 8px solid var(--color-orange);
+  border-radius: 2px 6px 6px 2px;
+  background: linear-gradient(to right, rgb(var(--color-orange-rgb), 0.06), transparent 8px);
 }
 
 .canvas-node.mod-canvas-color-6 .canvas-node-content h1 {
@@ -951,4 +951,16 @@ pre.cc-bilibili-pre + * {
 
 .cc-settings-content {
   padding-left: 0;
+}
+
+.cc-load-more {
+  text-align: center;
+  padding: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.cc-load-more:hover {
+  color: var(--text-accent);
 }

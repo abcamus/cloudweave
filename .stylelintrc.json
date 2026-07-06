@@ -1,7 +1,7 @@
 {
   "extends": "stylelint-config-standard",
   "rules": {
-    "declaration-no-important": null,
+    "declaration-no-important": true,
     "selector-not-notation": null,
     "no-descending-specificity": null,
     "comment-empty-line-before": null,

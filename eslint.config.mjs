@@ -7,6 +7,13 @@ import { globalIgnores } from "eslint/config";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const projectServiceCfg = {
+	allowDefaultProject: [
+		'eslint.config.js',
+		'manifest.json'
+	]
+};
+
 export default tseslint.config(
 	{
 		languageOptions: {
@@ -14,18 +21,20 @@ export default tseslint.config(
 				...globals.browser,
 			},
 			parserOptions: {
-				projectService: {
-					allowDefaultProject: [
-						'eslint.config.js',
-						'manifest.json'
-					]
-				},
 				tsconfigRootDir: __dirname,
 				extraFileExtensions: ['.json']
 			},
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		files: ['**/*.{ts,cts,mts,tsx}'],
+		languageOptions: {
+			parserOptions: {
+				projectService: projectServiceCfg,
+			},
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",

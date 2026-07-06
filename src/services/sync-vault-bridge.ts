@@ -15,9 +15,15 @@ interface RawCloudEntry {
 
 interface MCPResult {
   files?: RawCloudEntry[]
-  pagination?: { total?: number }
+  pagination?: { total?: number; hasMore?: boolean }
   tools?: Array<{ name: string }>
   content?: Array<{ type: string; text: string }>
+}
+
+export interface ListFilesResult {
+  files: CloudFileEntry[]
+  total: number
+  hasMore: boolean
 }
 
 export class SyncVaultBridge {
@@ -33,28 +39,33 @@ export class SyncVaultBridge {
   async listFiles(
     path: string,
     cloudType: CloudDiskType,
-    limit = 50,
+    limit = 100,
     offset = 0
-  ): Promise<{ files: CloudFileEntry[]; total: number }> {
+  ): Promise<ListFilesResult> {
     const mcpResp = await this.post("list_cloud_files", { cloudType, path, limit, offset })
     const data = this.parse(mcpResp)
-    if (!data?.files) return { files: [], total: 0 }
+    if (!data?.files) return { files: [], total: 0, hasMore: false }
     return {
       files: data.files.map(f => this.mapEntry(f, cloudType)),
       total: data.pagination?.total ?? data.files.length,
+      hasMore: data.pagination?.hasMore ?? false,
     }
   }
 
   async searchFiles(
     query: string,
     cloudType: CloudDiskType,
-    limit = 20,
+    limit = 50,
     offset = 0
-  ): Promise<CloudFileEntry[]> {
+  ): Promise<ListFilesResult> {
     const mcpResp = await this.post("search_cloud_files", { query, cloudType, limit, offset })
     const data = this.parse(mcpResp)
-    if (!data?.files) return []
-    return data.files.map(f => this.mapEntry(f, cloudType))
+    if (!data?.files) return { files: [], total: 0, hasMore: false }
+    return {
+      files: data.files.map(f => this.mapEntry(f, cloudType)),
+      total: data.pagination?.total ?? data.files.length,
+      hasMore: data.pagination?.hasMore ?? false,
+    }
   }
 
   getCategory(file: CloudFileEntry): CloudFileCategory {

@@ -5,6 +5,8 @@ import { SyncVaultBridge } from "../services/sync-vault-bridge"
 import { BilibiliService } from "../services/bilibili-service"
 import { CloudNodeService } from "../services/cloud-node-service"
 
+const PAGE_LIMIT = 100
+
 export class CloudFilePickerModal extends Modal {
   private files: CloudFileEntry[] = []
   private currentPath = "/"
@@ -21,6 +23,9 @@ export class CloudFilePickerModal extends Modal {
   private viewToggleEl!: HTMLElement
   private selectAllBtn!: HTMLElement
   private footerEl: HTMLElement | null = null
+  private offset = 0
+  private total = 0
+  private hasMore = false
 
   constructor(
     app: App,
@@ -183,37 +188,50 @@ export class CloudFilePickerModal extends Modal {
 
   private seq = 0
 
-  private async loadFiles(dir?: string) {
+  private async loadFiles(dir?: string, append = false) {
     const seq = ++this.seq
     this.loading = true
     this.render()
 
     try {
       const targetPath = dir ?? this.currentPath
-      let result: { files: CloudFileEntry[]; total: number }
+
+      if (!append) {
+        this.offset = 0
+      }
+
+      let result: { files: CloudFileEntry[]; total: number; hasMore: boolean }
 
       if (this.currentCloud === "bilibili") {
         if (!this.searchQuery) {
-          result = { files: [], total: 0 }
+          result = { files: [], total: 0, hasMore: false }
         } else {
           const entries = await this.bilibiliService!.search(this.searchQuery)
-          result = { files: entries, total: entries.length }
+          result = { files: entries, total: entries.length, hasMore: false }
         }
       } else if (this.searchQuery) {
-        const entries = await this.syncVault.searchFiles(
+        result = await this.syncVault.searchFiles(
           this.searchQuery,
-          this.currentCloud
+          this.currentCloud,
+          PAGE_LIMIT,
+          this.offset,
         )
-        result = { files: entries, total: entries.length }
       } else {
-        result = await this.syncVault.listFiles(targetPath, this.currentCloud, 100, 0)
+        result = await this.syncVault.listFiles(targetPath, this.currentCloud, PAGE_LIMIT, this.offset)
       }
 
       if (seq !== this.seq) return
 
-      this.files = result.files
+      if (append) {
+        this.files.push(...result.files)
+      } else {
+        this.files = result.files
+        this.selected.clear()
+      }
+      this.total = result.total
+      this.hasMore = result.hasMore
+      this.offset += result.files.length
       this.currentPath = targetPath
-      this.selected.clear()
       this.loading = false
       this.render()
     } catch (e) {
@@ -259,6 +277,23 @@ export class CloudFilePickerModal extends Modal {
         this.renderGrid(sorted, list)
       } else {
         this.renderList(sorted, list)
+      }
+
+      if (this.hasMore) {
+        const loadMoreBtn = list.createDiv({ cls: "cc-load-more" })
+        loadMoreBtn.textContent = `加载更多 (${this.files.length}/${this.total})`
+        const loadFn = async () => {
+          loadMoreBtn.remove()
+          await this.loadFiles(undefined, true)
+        }
+        loadMoreBtn.onClickEvent(loadFn)
+        const obs = new IntersectionObserver((entries) => {
+          if (entries[0]?.isIntersecting) {
+            obs.disconnect()
+            void loadFn()
+          }
+        }, { rootMargin: "200px" })
+        obs.observe(loadMoreBtn)
       }
     }
 
