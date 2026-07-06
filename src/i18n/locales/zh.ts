@@ -51,6 +51,10 @@ const zh: Record<string, string> = {
   cloudLabelQuark: "夸克网盘",
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
+  cloudLabelBilibili: "哔哩哔哩",
+  searchBilibiliPlaceholder: "搜索 Bilibili 视频...",
+  bilibiliNoResults: "未找到相关视频",
+  bilibiliSearchError: "搜索失败: {0}",
   insertFolderLabel: "插入文件夹",
   insertFolderConfirm: "将当前文件夹以分组形式插入画布？",
   insertFolderDepth: "递归深度",
@@ -62,6 +66,10 @@ const zh: Record<string, string> = {
   listView: "列表视图",
   insertSelected: "插入选中 ({0})",
   selectedCount: "已选 {0} 个文件",
+  bilibiliNoCookie: "请先在设置中配置 Bilibili Cookie",
+  uploadToBaidu: "上传到百度网盘",
+  uploadBaiduSuccess: "已提交上传: {0}",
+  uploadBaiduFailed: "上传到百度网盘失败: {0}",
 }
 
 export default zh

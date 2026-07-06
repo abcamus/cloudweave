@@ -51,6 +51,10 @@ const en: Record<string, string> = {
   cloudLabelQuark: "Quark",
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
+  cloudLabelBilibili: "Bilibili",
+  searchBilibiliPlaceholder: "Search Bilibili videos...",
+  bilibiliNoResults: "No videos found",
+  bilibiliSearchError: "Search failed: {0}",
   insertFolderLabel: "Insert folder",
   insertFolderConfirm: "Insert this folder as a group with its contents?",
   insertFolderDepth: "Recursive depth",
@@ -62,6 +66,10 @@ const en: Record<string, string> = {
   listView: "List view",
   insertSelected: "Insert selected ({0})",
   selectedCount: "{0} file(s) selected",
+  bilibiliNoCookie: "Please configure Bilibili cookie in settings first",
+  uploadToBaidu: "Upload to Baidu Cloud",
+  uploadBaiduSuccess: "Upload submitted: {0}",
+  uploadBaiduFailed: "Upload to Baidu Cloud failed: {0}",
 }
 
 export default en

@@ -2,6 +2,7 @@ import { Plugin, Notice, setIcon } from "obsidian"
 import { initLocale, t } from "./i18n"
 import { CanvasService } from "./services/canvas-service"
 import { SyncVaultBridge } from "./services/sync-vault-bridge"
+import { BilibiliService } from "./services/bilibili-service"
 import { ContextAIService } from "./services/context-ai-service"
 import { InsertCloudNodeCommand } from "./commands/insert-cloud-node"
 import { TimestampCommand } from "./commands/timestamp"
@@ -12,12 +13,18 @@ export interface PluginSettings {
   cardStyle: string
   imageCardStyle: string
   ebookStyle: string
+  llmSecretName: string
+  tavilySecretName: string
+  bilibiliSecretName: string
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   cardStyle: "default",
   imageCardStyle: "poster",
   ebookStyle: "default",
+  llmSecretName: "",
+  tavilySecretName: "",
+  bilibiliSecretName: "",
 }
 
 const CARD_STYLE_CLASSES = [
@@ -54,6 +61,7 @@ export default class ContextCanvasPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS
   private canvasService!: CanvasService
   private syncVault!: SyncVaultBridge
+  bilibiliService!: BilibiliService
   private aiService!: ContextAIService
   private insertCloudNodeCmd!: InsertCloudNodeCommand
   private timestampCmd!: TimestampCommand
@@ -70,16 +78,24 @@ export default class ContextCanvasPlugin extends Plugin {
     this.applyEbookStyle(this.settings.ebookStyle)
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
+    this.bilibiliService = new BilibiliService(this.app, this.canvasService, this.syncVault)
+    await this.loadBilibiliCookie()
     this.aiService = new ContextAIService(this.app, this.canvasService, this.syncVault)
-    this.insertCloudNodeCmd = new InsertCloudNodeCommand(this.app, this.canvasService, this.syncVault)
+    this.insertCloudNodeCmd = new InsertCloudNodeCommand(this.app, this.canvasService, this.syncVault, this.bilibiliService)
     this.timestampCmd = new TimestampCommand(this.app, this.canvasService)
-    this.toolbar = new CanvasToolbar(this.app, this.canvasService, this.aiService, this.syncVault)
+    this.toolbar = new CanvasToolbar(this.app, this.canvasService, this.aiService, this.syncVault, this.bilibiliService)
 
     this.registerCommands()
     this.initCanvasContextMenu()
     this.registerCodeMirrorProtocol()
 
     this.addSettingTab(new ContextCanvasSettingTab(this.app, this))
+
+    this.registerBilibiliProcessor()
+  }
+
+  private registerBilibiliProcessor() {
+    this.registerMarkdownCodeBlockProcessor("bilibili", this.bilibiliService.getCodeBlockHandler())
   }
 
   private registerCommands() {
@@ -248,6 +264,14 @@ export default class ContextCanvasPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings)
+  }
+
+  async loadBilibiliCookie() {
+    const secretName = this.settings.bilibiliSecretName
+    if (secretName) {
+      const cookie = await this.app.secretStorage.getSecret(secretName)
+      this.bilibiliService.setCookie(cookie || "")
+    }
   }
 
   applyCardStyle(style: string) {

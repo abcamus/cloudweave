@@ -99,17 +99,17 @@ export class AIPanel {
 
   private loadConfig(): LLMConfig {
     const raw = this.app.loadLocalStorage("cc-llm-config") as string | null
-    if (typeof raw === "string") {
-      try {
-        return JSON.parse(raw) as LLMConfig
-      } catch {
-        /* ignore */
+    const config: LLMConfig = typeof raw === "string"
+      ? JSON.parse(raw) as LLMConfig
+      : { provider: "openai", apiKey: "", model: "gpt-4o-mini" }
+    if (!config.apiKey) {
+      const appWithPlugins = this.app as unknown as { plugins: { plugins: Record<string, unknown> } }
+      const cloudweave = appWithPlugins.plugins.plugins["cloudweave"] as { settings: { llmSecretName?: string } } | undefined
+      const secretName = cloudweave?.settings?.llmSecretName
+      if (secretName) {
+        config.apiKey = this.app.secretStorage.getSecret(secretName) || ""
       }
     }
-    return {
-      provider: "openai",
-      apiKey: "",
-      model: "gpt-4o-mini",
-    }
+    return config
   }
 }

@@ -1,6 +1,7 @@
 export type CloudDiskType =
   | "aliyun" | "baidu" | "quark" | "onedrive" | "115"
   | "nutstore" | "infinicloud" | "googledrive" | "webdav"
+  | "bilibili"
 
 export type CloudFileCategory = "video" | "audio" | "image" | "pdf" | "ebook" | "folder" | "other"
 
@@ -99,4 +100,5 @@ export interface LLMConfig {
   apiKey: string
   model: string
   endpoint?: string
+  tavilyApiKey?: string
 }

@@ -3,6 +3,7 @@ import { t } from "../i18n"
 import { CloudFileEntry, CloudNodeMeta, CloudDiskType, CloudFileCategory, CanvasData, CanvasNode } from "../types"
 import { CanvasService } from "./canvas-service"
 import { SyncVaultBridge } from "./sync-vault-bridge"
+import { BilibiliService } from "./bilibili-service"
 import { CLOUD_NODE_COLORS } from "../constants"
 
 const META_COMMENT_RE = /<!--\s*meta:\s*(\{.+?\})\s*-->/
@@ -11,7 +12,8 @@ export class CloudNodeService {
   constructor(
     private app: App,
     private canvasService: CanvasService,
-    private syncVault: SyncVaultBridge
+    private syncVault: SyncVaultBridge,
+    private bilibiliService?: BilibiliService,
   ) {}
 
   get viewportCenter(): { x: number; y: number } {
@@ -19,6 +21,10 @@ export class CloudNodeService {
   }
 
   async insertCloudFile(file: CloudFileEntry, pos?: { x: number; y: number }) {
+    if (file.cloudType === "bilibili" && this.bilibiliService) {
+      await this.bilibiliService.insertVideo(file, pos)
+      return
+    }
     const category = this.syncVault.getCategory(file)
     const content = this.buildContent(file, category)
     const nodeId = `cloud-${category}-${file.cloudType}-${file.fsid}-${Date.now()}`
@@ -293,6 +299,10 @@ export class CloudNodeService {
   }
 
   private buildContent(file: CloudFileEntry, category: CloudFileCategory): string {
+    if (file.cloudType === "bilibili" && this.bilibiliService) {
+      const meta = { bvid: file.fsid, title: file.name, cover: file.thumb || "", duration: file.size, up: "" }
+      return this.bilibiliService.buildNodeContent(meta)
+    }
     const meta: CloudNodeMeta = {
       cloudType: file.cloudType,
       filePath: file.path,

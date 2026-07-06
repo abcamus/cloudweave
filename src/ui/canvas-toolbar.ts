@@ -4,6 +4,7 @@ import { CANVAS_VIEW_TYPE } from "../constants"
 import { CanvasService } from "../services/canvas-service"
 import { ContextAIService } from "../services/context-ai-service"
 import { SyncVaultBridge } from "../services/sync-vault-bridge"
+import { BilibiliService } from "../services/bilibili-service"
 import { CloudNodeService } from "../services/cloud-node-service"
 import { CloudFilePickerModal } from "./cloud-file-picker"
 import { LLMConfig } from "../types"
@@ -32,6 +33,7 @@ export class CanvasToolbar {
     private canvasService: CanvasService,
     private aiService: ContextAIService,
     private syncVault: SyncVaultBridge,
+    private bilibiliService: BilibiliService,
   ) {
     this.config = this.loadConfig()
     this.buildPopover()
@@ -191,10 +193,10 @@ export class CanvasToolbar {
       return
     }
 
-    const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault)
+    const cloudNodeService = new CloudNodeService(this.app, this.canvasService, this.syncVault, this.bilibiliService)
     const modal = new CloudFilePickerModal(this.app, this.syncVault, (file) => {
       return cloudNodeService.insertCloudFile(file)
-    }, cloudNodeService)
+    }, cloudNodeService, this.bilibiliService)
     modal.open()
   }
 
@@ -364,12 +366,18 @@ export class CanvasToolbar {
 
   private loadConfig(): LLMConfig {
     const raw = this.app.loadLocalStorage("cc-llm-config") as string | null
-    if (raw) {
-      try {
-        return JSON.parse(raw) as LLMConfig
-      } catch { /* ignore */ }
+    const config: LLMConfig = raw
+      ? JSON.parse(raw) as LLMConfig
+      : { provider: "openai", apiKey: "", model: "gpt-4o-mini" }
+    if (!config.apiKey) {
+      const appWithPlugins = this.app as unknown as { plugins: { plugins: Record<string, unknown> } }
+      const cloudweave = appWithPlugins.plugins.plugins["cloudweave"] as { settings: { llmSecretName?: string } } | undefined
+      const secretName = cloudweave?.settings?.llmSecretName
+      if (secretName) {
+        config.apiKey = this.app.secretStorage.getSecret(secretName) || ""
+      }
     }
-    return { provider: "openai", apiKey: "", model: "gpt-4o-mini" }
+    return config
   }
 
   unmount() {

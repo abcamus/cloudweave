@@ -24,6 +24,7 @@ export class SyncVaultBridge {
   private endpoint = "http://127.0.0.1:3002/message"
   private ready = false
 
+  
   async ensureReady(): Promise<boolean> {
     if (this.ready) return true
     return this.detect()
@@ -84,7 +85,7 @@ export class SyncVaultBridge {
     throw new Error(t("readFailed", "cloud file"))
   }
 
-  private async post(method: string, args: Record<string, unknown>): Promise<MCPResult> {
+  async post(method: string, args: Record<string, unknown>): Promise<MCPResult> {
     const body = JSON.stringify({
       jsonrpc: "2.0",
       id: Date.now(),

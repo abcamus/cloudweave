@@ -41,3 +41,8 @@
 ### Settings
 - LLM config uses `app.loadLocalStorage` / `app.saveLocalStorage`
 - Plugin settings use `plugin.loadData` / `plugin.saveData`
+
+### Collapsible settings sections
+- Use `<details><summary>` HTML elements styled in `styles.css` (`.cc-settings-section`, `.cc-settings-summary`, `.cc-settings-content`)
+- Section expanded state persisted via `app.loadLocalStorage/saveLocalStorage` under key `"cc-settings-collapse"`
+- `buildSection(key, parent, fn)` helper: passes `content` div to callback so `Setting` instances attach to the right container

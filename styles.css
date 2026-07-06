@@ -800,3 +800,150 @@ body.cc-card-style-accent .canvas-node.mod-canvas-color-5 .canvas-node-container
 body.cc-card-style-notion .canvas-node.mod-canvas-color-5.is-focused .canvas-node-container {
   box-shadow: none !important;
 }
+
+/* ───── Bilibili Player ───── */
+.cc-bilibili-player {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cc-bilibili-player iframe {
+  flex: 1;
+  min-height: 0;
+}
+
+.cc-bilibili-info {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-bilibili-info strong {
+  color: var(--text-normal);
+}
+
+.cc-bilibili-up {
+  color: var(--text-faint);
+  margin-left: 8px;
+}
+
+/* ───── Bilibili in canvas: fill full node ───── */
+.canvas-node:not(.is-editing) .cc-bilibili-player {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  z-index: 1;
+}
+
+.canvas-node:not(.is-editing) .cc-bilibili-player iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.canvas-node:not(.is-editing) .cc-bilibili-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.canvas-node:not(.is-editing) .markdown-preview-view:has(.cc-bilibili-player) {
+  position: relative;
+  padding: 0 !important;
+}
+
+.cc-bilibili-pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+}
+
+/* ───── Bilibili search results ───── */
+.cc-file-thumb {
+  width: 80px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.cc-grid-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.cc-grid-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-secondary);
+  overflow: hidden;
+}
+
+/* ───── Collapsible Settings Sections ───── */
+.cc-settings-section {
+  margin-bottom: 0;
+}
+
+.cc-settings-section[open] {
+  padding-bottom: 8px;
+}
+
+.cc-settings-summary {
+  cursor: pointer;
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-semibold);
+  padding: 12px 0 8px;
+  color: var(--text-normal);
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cc-settings-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-settings-summary::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+  display: inline-block;
+}
+
+.cc-settings-section[open] > .cc-settings-summary::before {
+  transform: rotate(90deg);
+}
+
+.cc-settings-summary:hover {
+  color: var(--text-accent);
+}
+
+.cc-settings-content {
+  padding-left: 0;
+}

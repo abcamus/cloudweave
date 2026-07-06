@@ -9,6 +9,7 @@ export const CLOUD_NODE_COLORS: Record<string, string> = {
   pdf: "2",
   ebook: "6",
   folder: "1",
+  bilibili: "3",
 }
 
 export const CLOUD_DISK_LABELS: Record<string, string> = {
@@ -17,4 +18,5 @@ export const CLOUD_DISK_LABELS: Record<string, string> = {
   quark: "夸克网盘",
   onedrive: "OneDrive",
   "115": "115 网盘",
+  bilibili: "Bilibili",
 }

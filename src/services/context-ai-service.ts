@@ -80,6 +80,27 @@ const TOOLS: LLMToolDef[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "搜索互联网。当需要最新信息、事实核查、或回答知识类问题时使用。",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "搜索关键词",
+          },
+          maxResults: {
+            type: "number",
+            description: "可选，返回结果数量，默认 5",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ]
 
 interface ToolCall {
@@ -190,7 +211,7 @@ export class ContextAIService {
 
       if (response.toolCalls && response.toolCalls.length > 0) {
         for (const call of response.toolCalls) {
-          const result = await this.executeTool(call)
+          const result = await this.executeTool(call, config)
           const toolMsg: LLMMessage = { role: "tool", content: result }
           if (call.id) toolMsg.tool_call_id = call.id
           messages.push(toolMsg)
@@ -221,7 +242,7 @@ export class ContextAIService {
     ]
   }
 
-  private async executeTool(call: ToolCall): Promise<string> {
+  private async executeTool(call: ToolCall, config?: LLMConfig): Promise<string> {
     switch (call.name) {
       case "read_file": {
         const path = call.arguments.path
@@ -243,6 +264,42 @@ export class ContextAIService {
           return content
         } catch (e) {
           return `错误: 读取云盘文件失败: ${e instanceof Error ? e.message : String(e)}`
+        }
+      }
+      case "web_search": {
+        const query = call.arguments.query
+        if (!query) return "错误: 缺少 query 参数"
+        const apiKey = config?.tavilyApiKey || ""
+        if (!apiKey) return "错误: 未配置 Tavily API Key，请在设置中填写"
+        const maxResults = Math.min(Number(call.arguments.maxResults) || 5, 10)
+        try {
+          const resp = await requestUrl({
+            url: "https://api.tavily.com/search",
+            method: "POST",
+            contentType: "application/json",
+            body: JSON.stringify({
+              api_key: apiKey,
+              query,
+              max_results: maxResults,
+              search_depth: "basic",
+              include_answer: true,
+            }),
+          })
+          const data = resp.json as {
+            answer?: string
+            results?: Array<{ title: string; url: string; content: string; score: number }>
+          }
+          const parts: string[] = []
+          if (data.answer) parts.push(`摘要: ${data.answer}`)
+          if (data.results?.length) {
+            parts.push("---", "搜索结果:")
+            for (const r of data.results) {
+              parts.push(`- [${r.title}](${r.url})\n  ${r.content.slice(0, 500)}`)
+            }
+          }
+          return parts.join("\n\n") || "未找到相关结果"
+        } catch (e) {
+          return `搜索失败: ${e instanceof Error ? e.message : String(e)}`
         }
       }
       default:
@@ -335,8 +392,9 @@ export class ContextAIService {
 
   private async respondOpenAI(messages: LLMMessage[], tools: LLMToolDef[] | null, config: LLMConfig): Promise<LLMResponse> {
     const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
+    const apiKey = config.apiKey || ""
     const headers: Record<string, string> = {}
-    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`
     const body = {
       model: config.model || "gpt-4o-mini",
       messages,
@@ -370,8 +428,9 @@ export class ContextAIService {
     onChunk: StreamChunk,
   ): Promise<LLMResponse> {
     const url = config.endpoint || "https://api.openai.com/v1/chat/completions"
+    const apiKey = config.apiKey || ""
     const headers: Record<string, string> = { "Content-Type": "application/json" }
-    if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`
     const body = {
       model: config.model || "gpt-4o-mini",
       messages,

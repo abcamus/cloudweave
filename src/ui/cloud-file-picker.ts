@@ -2,6 +2,7 @@ import { App, Modal, Notice, setIcon } from "obsidian"
 import { t } from "../i18n"
 import { CloudFileEntry, CloudDiskType } from "../types"
 import { SyncVaultBridge } from "../services/sync-vault-bridge"
+import { BilibiliService } from "../services/bilibili-service"
 import { CloudNodeService } from "../services/cloud-node-service"
 
 export class CloudFilePickerModal extends Modal {
@@ -26,6 +27,7 @@ export class CloudFilePickerModal extends Modal {
     private syncVault: SyncVaultBridge,
     private onPick: (file: CloudFileEntry) => void | Promise<void>,
     private cloudNodeService?: CloudNodeService,
+    private bilibiliService?: BilibiliService,
   ) {
     super(app)
     this.titleEl.setText(t("cloudInsertTitle"))
@@ -42,13 +44,14 @@ export class CloudFilePickerModal extends Modal {
     const left = toolbar.createDiv("cc-toolbar-left")
     const right = toolbar.createDiv("cc-toolbar-right")
 
-    const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115"]
+    const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115", "bilibili"]
     const cloudLabels: Record<string, string> = {
       aliyun: t("cloudLabelAliyun"),
       baidu: t("cloudLabelBaidu"),
       quark: t("cloudLabelQuark"),
       onedrive: t("cloudLabelOnedrive"),
       "115": t("cloudLabel115"),
+      bilibili: t("cloudLabelBilibili"),
     }
 
     const select = left.createEl("select", { cls: "dropdown" })
@@ -61,6 +64,15 @@ export class CloudFilePickerModal extends Modal {
       this.currentPath = "/"
       this.searchQuery = ""
       this.selected.clear()
+      if (this.currentCloud === "bilibili") {
+        this.searchActive = true
+        this.searchRowEl.classList.toggle("cc-open", this.searchActive)
+        searchBtn.classList.toggle("cc-active", this.searchActive)
+        this.searchInputEl.placeholder = t("searchBilibiliPlaceholder")
+        this.searchInputEl.focus()
+      } else {
+        this.searchInputEl.placeholder = t("searchPlaceholder")
+      }
       await this.loadFiles()
     }
 
@@ -180,7 +192,14 @@ export class CloudFilePickerModal extends Modal {
       const targetPath = dir ?? this.currentPath
       let result: { files: CloudFileEntry[]; total: number }
 
-      if (this.searchQuery) {
+      if (this.currentCloud === "bilibili") {
+        if (!this.searchQuery) {
+          result = { files: [], total: 0 }
+        } else {
+          const entries = await this.bilibiliService!.search(this.searchQuery)
+          result = { files: entries, total: entries.length }
+        }
+      } else if (this.searchQuery) {
         const entries = await this.syncVault.searchFiles(
           this.searchQuery,
           this.currentCloud
@@ -211,14 +230,24 @@ export class CloudFilePickerModal extends Modal {
     contentEl.querySelector(".cc-file-list")?.remove()
     contentEl.querySelector(".cc-footer")?.remove()
 
-    this.updateBreadcrumb()
+    if (this.currentCloud !== "bilibili") {
+      this.updateBreadcrumb()
+    } else {
+      this.breadcrumbEl.empty()
+    }
 
     const list = contentEl.createDiv("cc-file-list")
 
     if (this.loading) {
       list.createEl("p", { text: t("loading"), cls: "cc-loading" })
     } else if (this.files.length === 0) {
-      list.createEl("p", { text: t("emptyResult"), cls: "cc-empty" })
+      if (this.currentCloud === "bilibili" && !this.searchQuery) {
+        list.createEl("p", { text: "🔍 " + t("searchBilibiliPlaceholder"), cls: "cc-empty" })
+      } else if (this.currentCloud === "bilibili") {
+        list.createEl("p", { text: t("bilibiliNoResults"), cls: "cc-empty" })
+      } else {
+        list.createEl("p", { text: t("emptyResult"), cls: "cc-empty" })
+      }
     } else {
       const sorted = [...this.files].sort((a, b) => {
         if (a.isdir !== b.isdir) return a.isdir ? -1 : 1
@@ -253,16 +282,40 @@ export class CloudFilePickerModal extends Modal {
       })
 
       const fileNameSpan = row.createSpan({ cls: "cc-file-name" })
-      const iconSpan = fileNameSpan.createSpan({ cls: "cc-file-type-icon" })
-      if (file.isdir) {
-        this.renderFolderIcon(iconSpan)
+      if (file.thumb) {
+        const thumb = fileNameSpan.createEl("img", { cls: "cc-file-thumb" })
+        thumb.src = file.thumb
+        thumb.alt = file.name
       } else {
-        setIcon(iconSpan, this.getFileIcon(file.name))
+        const iconSpan = fileNameSpan.createSpan({ cls: "cc-file-type-icon" })
+        if (file.isdir) {
+          this.renderFolderIcon(iconSpan)
+        } else {
+          setIcon(iconSpan, this.getFileIcon(file.name))
+        }
       }
       fileNameSpan.createSpan({ text: " " + file.name })
 
       const sizeStr = file.isdir ? "" : this.formatSize(file.size)
       if (sizeStr) row.createSpan({ text: sizeStr, cls: "cc-file-size" })
+
+      if (file.cloudType === "bilibili" && this.bilibiliService) {
+        const uploadBtn = row.createSpan({ cls: "cc-toolbar-btn" })
+        setIcon(uploadBtn, "upload-cloud")
+        uploadBtn.setAttr("aria-label", t("uploadToBaidu"))
+        uploadBtn.onClickEvent(async (e) => {
+          e.stopPropagation()
+          uploadBtn.addClass("cc-loading")
+          try {
+            await this.bilibiliService!.uploadToBaidu(file.fsid, file.name + ".mp4")
+            new Notice(t("uploadBaiduSuccess", file.name))
+          } catch (err) {
+            new Notice(t("uploadBaiduFailed", err instanceof Error ? err.message : String(err)))
+          } finally {
+            uploadBtn.removeClass("cc-loading")
+          }
+        })
+      }
 
       if (file.isdir) {
         row.onClickEvent(async () => {
@@ -311,12 +364,36 @@ export class CloudFilePickerModal extends Modal {
 
       const card = list.createDiv("cc-grid-card" + (isSelected ? " cc-selected" : ""))
       const preview = card.createDiv("cc-grid-preview")
-      const iconSpan = preview.createSpan({ cls: "cc-grid-icon" })
-      setIcon(iconSpan, this.getFileIcon(file.name))
+      if (file.thumb) {
+        const img = preview.createEl("img", { cls: "cc-grid-thumb" })
+        img.src = file.thumb
+        img.alt = file.name
+      } else {
+        const iconSpan = preview.createSpan({ cls: "cc-grid-icon" })
+        setIcon(iconSpan, this.getFileIcon(file.name))
+      }
       const cb = card.createDiv("cc-grid-checkbox")
       cb.textContent = isSelected ? "✓" : ""
       const nameEl = card.createDiv("cc-grid-name")
       nameEl.textContent = file.name
+
+      if (file.cloudType === "bilibili" && this.bilibiliService) {
+        const uploadBtn = card.createDiv({ cls: "cc-grid-upload-btn" })
+        setIcon(uploadBtn, "upload-cloud")
+        uploadBtn.setAttr("aria-label", t("uploadToBaidu"))
+        uploadBtn.onClickEvent(async (e) => {
+          e.stopPropagation()
+          uploadBtn.addClass("cc-loading")
+          try {
+            await this.bilibiliService!.uploadToBaidu(file.fsid, file.name + ".mp4")
+            new Notice(t("uploadBaiduSuccess", file.name))
+          } catch (err) {
+            new Notice(t("uploadBaiduFailed", err instanceof Error ? err.message : String(err)))
+          } finally {
+            uploadBtn.removeClass("cc-loading")
+          }
+        })
+      }
 
       card.onClickEvent(() => {
         this.toggleSelect(key, card)
