@@ -1,7 +1,7 @@
 {
   "id": "cloudweave",
   "name": "CloudWeave",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minAppVersion": "1.11.4",
   "description": "Cloud-storage file nodes + AI analysis for Canvas. Browse & insert files from Aliyun, Baidu, Quark, OneDrive.",
   "author": "Sync Vault",
