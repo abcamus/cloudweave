@@ -110,6 +110,21 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
           this.plugin.applyImageCardStyle(val)
         })
       })
+
+    new Setting(containerEl)
+      .setName("Book card style")
+      .setDesc("Visual style for ebook nodes in canvas")
+      .addDropdown((dd) => {
+        dd.addOption("default", "Warm spine (default)")
+        dd.addOption("apple", "Apple Books (bookshelf)")
+        dd.addOption("kind", "Kindle (clean)")
+        dd.setValue(this.plugin.settings.ebookStyle)
+        dd.onChange(async (val: string) => {
+          this.plugin.settings.ebookStyle = val
+          await this.plugin.saveSettings()
+          this.plugin.applyEbookStyle(val)
+        })
+      })
   }
 
   private loadConfig(): LLMConfig {

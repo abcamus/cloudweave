@@ -11,11 +11,13 @@ import { ContextCanvasSettingTab } from "./ui/settings-tab"
 export interface PluginSettings {
   cardStyle: string
   imageCardStyle: string
+  ebookStyle: string
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   cardStyle: "default",
   imageCardStyle: "poster",
+  ebookStyle: "default",
 }
 
 const CARD_STYLE_CLASSES = [
@@ -30,6 +32,12 @@ const IMAGE_STYLE_CLASSES = [
   "cc-image-style-poster",
   "cc-image-style-frame",
   "cc-image-style-masonry",
+]
+
+const EBOOK_STYLE_CLASSES = [
+  "cc-ebook-style-default",
+  "cc-ebook-style-apple",
+  "cc-ebook-style-kind",
 ]
 
 interface MenuEl {
@@ -59,6 +67,7 @@ export default class ContextCanvasPlugin extends Plugin {
     await this.loadSettings()
     this.applyCardStyle(this.settings.cardStyle)
     this.applyImageCardStyle(this.settings.imageCardStyle)
+    this.applyEbookStyle(this.settings.ebookStyle)
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
     this.aiService = new ContextAIService(this.app, this.canvasService, this.syncVault)
@@ -251,10 +260,16 @@ export default class ContextCanvasPlugin extends Plugin {
     activeDocument.body.addClass(`cc-image-style-${style}`)
   }
 
+  applyEbookStyle(style: string) {
+    activeDocument.body.removeClass(...EBOOK_STYLE_CLASSES)
+    activeDocument.body.addClass(`cc-ebook-style-${style}`)
+  }
+
   onunload() {
     this.toolbar?.unmount()
     this.menuObserver?.disconnect()
     activeDocument.body.removeClass(...CARD_STYLE_CLASSES)
     activeDocument.body.removeClass(...IMAGE_STYLE_CLASSES)
+    activeDocument.body.removeClass(...EBOOK_STYLE_CLASSES)
   }
 }

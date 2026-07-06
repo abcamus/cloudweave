@@ -571,7 +571,9 @@ body.cc-card-style-accent .canvas-node-container::before {
 }
 
 /* Suppress accent bar for ebook cards */
-body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container::before {
+body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container::before,
+body.cc-ebook-style-apple.body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container::before,
+body.cc-ebook-style-kind.body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container::before {
   display: none;
 }
 
@@ -583,6 +585,91 @@ body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container
   border-left: 8px solid var(--color-orange) !important;
   border-radius: 2px 6px 6px 2px !important;
   background: linear-gradient(to right, rgba(var(--color-orange-rgb), 0.06), transparent 8px) !important;
+}
+
+/* ───── Ebook Book Styles ───── */
+
+/* Apple Books — warm bookshelf with 3D depth */
+body.cc-ebook-style-apple .canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border-left: 8px solid var(--color-orange) !important;
+  border-radius: 2px 6px 6px 2px !important;
+  background: linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 100%) !important;
+  box-shadow:
+    3px 3px 8px rgba(0,0,0,0.12),
+    -1px 0 4px rgba(0,0,0,0.04) !important;
+  position: relative;
+}
+
+body.cc-ebook-style-apple .canvas-node.mod-canvas-color-6 .canvas-node-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, rgba(0,0,0,0.08), rgba(0,0,0,0.03));
+  pointer-events: none;
+}
+
+body.cc-ebook-style-apple .canvas-node.mod-canvas-color-6:hover .canvas-node-container {
+  box-shadow:
+    5px 5px 14px rgba(0,0,0,0.15),
+    -1px 0 4px rgba(0,0,0,0.04) !important;
+  transform: translateY(-1px);
+}
+
+body.cc-ebook-style-apple .canvas-node.mod-canvas-color-6 .canvas-node-content h1 {
+  color: #5c3d1a;
+}
+
+/* Kindle — clean digital */
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border: none !important;
+  border-radius: 4px !important;
+  background: var(--background-primary) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+}
+
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6:hover .canvas-node-container {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12) !important;
+}
+
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6 .canvas-node-content h1 {
+  font-family: var(--font-interface);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6 .canvas-node-content hr {
+  border-color: var(--background-modifier-border);
+  opacity: 0.5;
+}
+
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6 .canvas-node-content pre,
+body.cc-ebook-style-kind .canvas-node.mod-canvas-color-6 .canvas-node-content pre code {
+  color: var(--text-faint);
+}
+
+/* Card style overrides for ebook Apple/Kindle */
+body.cc-ebook-style-apple.body.cc-card-style-notion .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-apple.body.cc-card-style-glass .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-apple.body.cc-card-style-sticky .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-apple.body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border-left: 8px solid var(--color-orange) !important;
+  border-radius: 2px 6px 6px 2px !important;
+  background: linear-gradient(135deg, #f5e6d3 0%, #e8d5b7 100%) !important;
+  box-shadow: 3px 3px 8px rgba(0,0,0,0.12), -1px 0 4px rgba(0,0,0,0.04) !important;
+}
+
+body.cc-ebook-style-kind.body.cc-card-style-notion .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-kind.body.cc-card-style-glass .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-kind.body.cc-card-style-sticky .canvas-node.mod-canvas-color-6 .canvas-node-container,
+body.cc-ebook-style-kind.body.cc-card-style-accent .canvas-node.mod-canvas-color-6 .canvas-node-container {
+  border: none !important;
+  border-radius: 4px !important;
+  background: var(--background-primary) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
 }
 
 /* ───── Image Card Styles ───── */

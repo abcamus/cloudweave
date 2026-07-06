@@ -43,6 +43,30 @@ Mark timestamps in notes and jump to corresponding Canvas nodes.
 
 ---
 
+## LLM Configuration
+
+The AI features support multiple providers. Configure in **CloudWeave Settings → LLM Config**.
+
+### OpenAI / Gemini / Claude
+| Setting | Value |
+|---------|-------|
+| Provider | `openai`, `gemini`, or `claude` |
+| API Key | Your API key |
+| Model | e.g. `gpt-4o-mini`, `gemini-2.0-flash`, `claude-3-haiku` |
+| Endpoint | Optional custom endpoint |
+
+### Local (Ollama)
+| Setting | Value |
+|---------|-------|
+| Provider | `local` |
+| Endpoint | **Leave empty** (defaults to `http://localhost:11434/api/chat`) |
+| Model | The model name you pulled, e.g. `qwen2`, `llama3.2`, `mistral` |
+| API Key | Not needed |
+
+Example: After starting Ollama with `ollama run qwen2`, set Provider to `local` and Model to `qwen2`.
+
+---
+
 ## Installation
 
 1. Copy `main.js`, `manifest.json`, `styles.css` to `.obsidian/plugins/cloudweave/`

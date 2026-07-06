@@ -43,6 +43,30 @@
 
 ---
 
+## LLM 配置
+
+AI 功能支持多种提供商。在 **CloudWeave 设置 → LLM Config** 中配置。
+
+### OpenAI / Gemini / Claude
+| 设置项 | 值 |
+|-------|-----|
+| Provider | `openai`、`gemini` 或 `claude` |
+| API Key | 你的 API 密钥 |
+| Model | 例如 `gpt-4o-mini`、`gemini-2.0-flash`、`claude-3-haiku` |
+| Endpoint | 可选自定义地址 |
+
+### 本地模型（Ollama）
+| 设置项 | 值 |
+|-------|-----|
+| Provider | `local` |
+| Endpoint | **留空**（默认使用 `http://localhost:11434/api/chat`） |
+| Model | 你拉取的模型名称，如 `qwen2`、`llama3.2`、`mistral` |
+| API Key | 不需要 |
+
+示例：启动 Ollama 后执行 `ollama run qwen2`，然后在插件设置中将 Provider 设为 `local`，Model 设为 `qwen2` 即可使用。
+
+---
+
 ## 安装
 
 1. 将 `main.js`、`manifest.json`、`styles.css` 复制到 `.obsidian/plugins/cloudweave/`
