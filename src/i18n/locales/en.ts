@@ -70,6 +70,10 @@ const en: Record<string, string> = {
   uploadToBaidu: "Upload to Baidu Cloud",
   uploadBaiduSuccess: "Upload submitted: {0}",
   uploadBaiduFailed: "Upload to Baidu Cloud failed: {0}",
+  insertModeGrid: "Grid",
+  insertModeTimeline: "Timeline",
+  insertModeTitle: "Choose insert mode",
+  insertedTimeline: "Timeline inserted ({0} images)",
 }
 
 export default en

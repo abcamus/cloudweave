@@ -298,6 +298,108 @@ export class CloudNodeService {
     new Notice(t("insertedFolder", folder.name, String(children.length)))
   }
 
+  async buildTimelineGroup(files: CloudFileEntry[], pos?: { x: number; y: number }): Promise<void> {
+    const data = await this.canvasService.getData()
+    if (!data) return
+
+    const images = files
+      .filter(f => this.syncVault.getCategory(f) === "image")
+      .sort((a, b) => (a.mtime || 0) - (b.mtime || 0))
+
+    if (images.length === 0) return
+
+    const groups = new Map<string, CloudFileEntry[]>()
+    for (const f of images) {
+      const date = f.mtime ? new Date(f.mtime * 1000).toISOString().slice(0, 10) : "unknown"
+      if (!groups.has(date)) groups.set(date, [])
+      groups.get(date)!.push(f)
+    }
+
+    const cardW = 160, cardH = 120, gap = 12
+    const maxCols = 4
+    const groupPad = 20
+    const headerH = 36
+    const rowGap = 20
+
+    const ref = pos || this.canvasService.posCenter()
+    const groupId = `timeline-${Date.now()}`
+    const ts = Date.now()
+
+    let dayY = groupPad
+    let maxWidth = 0
+    const dayHeights: number[] = []
+
+    for (const [, dayFiles] of groups) {
+      const cols = Math.min(dayFiles.length, maxCols)
+      const rows = Math.ceil(dayFiles.length / maxCols)
+      const rowWidth = cols * cardW + (cols - 1) * gap
+      const dayH = headerH + rows * cardH + (rows - 1) * gap
+      maxWidth = Math.max(maxWidth, rowWidth)
+      dayHeights.push(dayH)
+    }
+
+    const groupW = groupPad * 2 + maxWidth
+    const groupH = groupPad + dayHeights.reduce((a, b) => a + b + rowGap, 0) - rowGap
+
+    const gx = ref.x
+    const gy = ref.y
+
+    data.nodes.push({
+      id: groupId,
+      x: gx, y: gy,
+      width: groupW, height: groupH,
+      type: "group",
+      label: `📷 Timeline (${images.length})`,
+    })
+
+    const dateEntries = [...groups.entries()]
+    for (let di = 0; di < dateEntries.length; di++) {
+      const [dateStr, dayFiles] = dateEntries[di]!
+      const rows = Math.ceil(dayFiles.length / maxCols)
+
+      const headerId = `timeline-date-${dateStr}-${ts}`
+      data.nodes.push({
+        id: headerId,
+        x: gx + groupPad, y: gy + dayY,
+        width: maxWidth, height: 20,
+        type: "text",
+        label: dateStr,
+        text: `📅 **${dateStr}**`,
+        color: "1",
+      })
+
+      dayY += headerH
+
+      for (let i = 0; i < dayFiles.length; i++) {
+        const file = dayFiles[i]!
+        const col = i % maxCols
+        const row = Math.floor(i / maxCols)
+        const cx = gx + groupPad + col * (cardW + gap)
+        const cy = gy + dayY + row * (cardH + gap)
+
+        const cloudLink = `obsidian://cloud-link?type=${file.cloudType}&id=${file.fsid}&cloudpath=${encodeURIComponent(file.path)}`
+        const content = `![](${cloudLink})`
+        const photoId = `timeline-photo-${file.fsid}-${ts}-${i}`
+
+        data.nodes.push({
+          id: photoId,
+          x: cx, y: cy,
+          width: cardW, height: cardH,
+          type: "text",
+          label: file.name.replace(/\.[^.]+$/, ""),
+          text: content,
+          color: "5",
+        })
+      }
+
+      dayY += rows * cardH + (rows - 1) * gap + rowGap
+    }
+
+    await this.canvasService.setData(data)
+    this.canvasService.scrollToNode(groupId)
+    new Notice(t("insertedTimeline", String(images.length)))
+  }
+
   private buildContent(file: CloudFileEntry, category: CloudFileCategory): string {
     if (file.cloudType === "bilibili" && this.bilibiliService) {
       const meta = { bvid: file.fsid, title: file.name, cover: file.thumb || "", duration: file.size, up: "" }

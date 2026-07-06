@@ -1,5 +1,5 @@
 import { App, ItemView } from "obsidian"
-import { Canvas, CanvasData } from "../types"
+import { Canvas, CanvasData, CanvasNode } from "../types"
 import { CANVAS_VIEW_TYPE } from "../constants"
 
 type CanvasView = ItemView & { canvas?: Canvas }
@@ -91,6 +91,50 @@ export class CanvasService {
 
     await this.setData(data)
     this.scrollToNode(nodeId)
+  }
+
+  async layoutTimeline(): Promise<void> {
+    const data = await this.getData()
+    if (!data) return
+
+    const nodes = data.nodes.filter(n => n.type !== "group")
+    if (nodes.length < 2) return
+
+    const META_RE = /<!--\s*meta:\s*(\{.+?\})\s*-->/
+    const TIMESTAMP_RE = /[A-Za-z]+-\d{10}/
+
+    const getMtime = (n: CanvasNode): number => {
+      const text = n.text ?? n.content ?? ""
+      const m = META_RE.exec(text)
+      if (m?.[1]) {
+        try {
+          const meta = JSON.parse(m[1]) as Record<string, unknown>
+          if (typeof meta.mtime === "number") return meta.mtime
+        } catch { /* ignore */ }
+      }
+      const tm = TIMESTAMP_RE.exec(text)
+      if (tm?.[0]) {
+        const ts = parseInt(tm[0].split("-").pop() ?? "", 10)
+        if (!isNaN(ts)) return ts
+      }
+      return n.y * 100000 + n.x
+    }
+
+    const dated = [...nodes]
+    dated.sort((a, b) => getMtime(a) - getMtime(b))
+
+    const gapY = 40
+    const startX = Math.min(...dated.map(n => n.x))
+    const startY = Math.min(...dated.map(n => n.y))
+    let cursorY = startY
+
+    for (const n of dated) {
+      n.x = startX
+      n.y = cursorY
+      cursorY += n.height + gapY
+    }
+
+    await this.setData(data)
   }
 
   async layoutGrid(cols = 4): Promise<void> {

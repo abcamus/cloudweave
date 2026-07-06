@@ -26,6 +26,7 @@ export class CloudFilePickerModal extends Modal {
   private offset = 0
   private total = 0
   private hasMore = false
+  private insertMode: "grid" | "timeline"
 
   constructor(
     app: App,
@@ -33,9 +34,11 @@ export class CloudFilePickerModal extends Modal {
     private onPick: (file: CloudFileEntry) => void | Promise<void>,
     private cloudNodeService?: CloudNodeService,
     private bilibiliService?: BilibiliService,
+    insertMode: "grid" | "timeline" = "grid",
   ) {
     super(app)
-    this.titleEl.setText(t("cloudInsertTitle"))
+    this.insertMode = insertMode
+    this.titleEl.setText(insertMode === "timeline" ? `⏳ ${t("insertModeTimeline")}` : t("cloudInsertTitle"))
   }
 
   onOpen() {
@@ -480,16 +483,16 @@ export class CloudFilePickerModal extends Modal {
 
   private async insertAllSelected() {
     if (this.selected.size === 0) return
-    const cns = this.cloudNodeService
-    if (!cns) {
-      for (const file of this.files) {
-        if (this.selected.has(file.fsid)) {
-          await this.onPick(file)
-        }
-      }
+    const selected = this.files.filter(f => this.selected.has(f.fsid))
+
+    if (this.insertMode === "timeline" && this.cloudNodeService) {
+      await this.cloudNodeService.buildTimelineGroup(selected)
+    } else if (this.cloudNodeService) {
+      await this.cloudNodeService.batchInsert(selected)
     } else {
-      const selected = this.files.filter(f => this.selected.has(f.fsid))
-      await cns.batchInsert(selected)
+      for (const file of selected) {
+        await this.onPick(file)
+      }
     }
     this.close()
   }

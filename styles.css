@@ -964,3 +964,65 @@ pre.cc-bilibili-pre + * {
 .cc-load-more:hover {
   color: var(--text-accent);
 }
+
+.cc-insert-mode-box {
+  padding: 8px 0;
+  text-align: center;
+}
+
+.cc-insert-mode-box .cc-insert-mode-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.cc-insert-mode-btn {
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.cc-insert-mode-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.cc-insert-mode-btn-primary {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.cc-insert-mode-btn-primary:hover {
+  opacity: 0.9;
+}
+
+.cc-layout-menu {
+  position: fixed;
+  z-index: 1000;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 15%);
+  min-width: 160px;
+  padding: 4px;
+}
+
+.cc-layout-menu-item {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.cc-layout-menu-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.cc-layout-group {
+  position: relative;
+}

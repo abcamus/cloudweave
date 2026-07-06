@@ -175,8 +175,47 @@ export class CanvasToolbar {
     setIcon(btn, "grid")
     controls.appendChild(group)
 
+    let menuEl: HTMLElement | null = null
+
+    const hideMenu = () => {
+      menuEl?.remove()
+      menuEl = null
+    }
+
+    group.addClass("cc-layout-group")
+
     btn.onClickEvent(() => {
-      void this.canvasService.layoutGrid(4)
+      if (menuEl) { hideMenu(); return }
+
+      menuEl = createDiv({ cls: "cc-layout-menu" })
+
+      const gridItem = menuEl.createDiv({ cls: "cc-layout-menu-item" })
+      gridItem.textContent = `▦ ${t("insertModeGrid")}布局`
+      gridItem.onClickEvent(() => {
+        hideMenu()
+        void this.canvasService.layoutGrid(4)
+      })
+
+      const tlItem = menuEl.createDiv({ cls: "cc-layout-menu-item" })
+      tlItem.textContent = `⏳ ${t("insertModeTimeline")}`
+      tlItem.onClickEvent(() => {
+        hideMenu()
+        void this.canvasService.layoutTimeline()
+      })
+
+      activeDocument.body.appendChild(menuEl)
+
+      const btnRect = btn.getBoundingClientRect()
+      menuEl.style.bottom = `${window.innerHeight - btnRect.top + 4}px`
+      menuEl.style.right = `${window.innerWidth - btnRect.right}px`
+
+      const closeHandler = (e: MouseEvent) => {
+        if (!menuEl?.contains(e.target as Node) && !group.contains(e.target as Node)) {
+          hideMenu()
+          activeDocument.removeEventListener("mousedown", closeHandler)
+        }
+      }
+      window.setTimeout(() => activeDocument.addEventListener("mousedown", closeHandler), 0)
     })
   }
 

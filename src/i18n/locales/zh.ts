@@ -70,6 +70,10 @@ const zh: Record<string, string> = {
   uploadToBaidu: "上传到百度网盘",
   uploadBaiduSuccess: "已提交上传: {0}",
   uploadBaiduFailed: "上传到百度网盘失败: {0}",
+  insertModeGrid: "网格",
+  insertModeTimeline: "时间轴",
+  insertModeTitle: "选择插入方式",
+  insertedTimeline: "已插入时间轴（{0} 张图片）",
 }
 
 export default zh
