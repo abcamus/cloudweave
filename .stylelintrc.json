@@ -1,0 +1,16 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "declaration-no-important": null,
+    "selector-not-notation": null,
+    "no-descending-specificity": null,
+    "comment-empty-line-before": null,
+    "custom-property-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "at-rule-empty-line-before": null,
+    "declaration-empty-line-before": null,
+    "no-duplicate-selectors": null,
+    "comment-whitespace-inside": null
+  },
+  "ignoreFiles": ["**/*.js", "**/*.ts", "**/*.mjs", "node_modules/**"]
+}
