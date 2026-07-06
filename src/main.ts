@@ -268,10 +268,12 @@ export default class ContextCanvasPlugin extends Plugin {
 
   async loadBilibiliCookie() {
     const secretName = this.settings.bilibiliSecretName
-    if (secretName) {
-      const cookie = await this.app.secretStorage.getSecret(secretName)
+    if (!secretName) return
+    try {
+      const s = this.app.secretStorage as unknown as { getSecret(id: string): Promise<string | null> }
+      const cookie = await s.getSecret(secretName)
       this.bilibiliService.setCookie(cookie || "")
-    }
+    } catch { /* ignore */ }
   }
 
   applyCardStyle(style: string) {
