@@ -12,7 +12,6 @@ const CLOUD_LABELS: Record<string, string> = {
   baidu: t("cloudLabelBaidu"),
   quark: t("cloudLabelQuark"),
   onedrive: t("cloudLabelOnedrive"),
-  "115": t("cloudLabel115"),
   bilibili: t("cloudLabelBilibili"),
 }
 
@@ -61,7 +60,7 @@ export class CloudFilePickerModal extends Modal {
     const left = toolbar.createDiv("cc-toolbar-left")
     const right = toolbar.createDiv("cc-toolbar-right")
 
-    const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115", "bilibili"]
+    const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "bilibili"]
 
     const select = left.createEl("select", { cls: "dropdown" })
     select.createEl("option", { value: "all", text: "🌐 " + t("cloudLabelAll") })
@@ -225,7 +224,7 @@ export class CloudFilePickerModal extends Modal {
         if (!this.searchQuery) {
           result = { files: [], total: 0, hasMore: false }
         } else {
-          const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115"]
+          const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive"]
           const tasks = clouds.map(c => this.syncVault.searchFiles(this.searchQuery, c, 20, 0))
           if (this.bilibiliService) {
             tasks.push(this.bilibiliService.search(this.searchQuery).then(entries => ({

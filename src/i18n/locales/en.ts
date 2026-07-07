@@ -50,7 +50,6 @@ const en: Record<string, string> = {
   cloudLabelBaidu: "Baidu",
   cloudLabelQuark: "Quark",
   cloudLabelOnedrive: "OneDrive",
-  cloudLabel115: "115",
   cloudLabelBilibili: "Bilibili",
   cloudLabelAll: "All clouds",
   allCloudSearch: "Search across all clouds...",

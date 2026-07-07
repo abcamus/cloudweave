@@ -50,7 +50,6 @@ const zh: Record<string, string> = {
   cloudLabelBaidu: "百度网盘",
   cloudLabelQuark: "夸克网盘",
   cloudLabelOnedrive: "OneDrive",
-  cloudLabel115: "115",
   cloudLabelBilibili: "哔哩哔哩",
   cloudLabelAll: "全部网盘",
   allCloudSearch: "搜索所有网盘...",

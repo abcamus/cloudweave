@@ -468,7 +468,6 @@ export class CloudNodeService {
       baidu: t("cloudLabelBaidu"),
       quark: t("cloudLabelQuark"),
       onedrive: t("cloudLabelOnedrive"),
-      "115": t("cloudLabel115"),
     }
     return labels[type] || type
   }
