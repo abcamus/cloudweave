@@ -52,6 +52,8 @@ const zh: Record<string, string> = {
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
   cloudLabelBilibili: "哔哩哔哩",
+  cloudLabelAll: "全部网盘",
+  allCloudSearch: "搜索所有网盘...",
   searchBilibiliPlaceholder: "搜索 Bilibili 视频...",
   bilibiliNoResults: "未找到相关视频",
   bilibiliSearchError: "搜索失败: {0}",

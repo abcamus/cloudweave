@@ -7,10 +7,19 @@ import { CloudNodeService } from "../services/cloud-node-service"
 
 const PAGE_LIMIT = 100
 
+const CLOUD_LABELS: Record<string, string> = {
+  aliyun: t("cloudLabelAliyun"),
+  baidu: t("cloudLabelBaidu"),
+  quark: t("cloudLabelQuark"),
+  onedrive: t("cloudLabelOnedrive"),
+  "115": t("cloudLabel115"),
+  bilibili: t("cloudLabelBilibili"),
+}
+
 export class CloudFilePickerModal extends Modal {
   private files: CloudFileEntry[] = []
   private currentPath = "/"
-  private currentCloud: CloudDiskType = "aliyun"
+  private currentCloud: CloudDiskType | "all" = "aliyun"
   private loading = false
   private searchQuery = ""
   private searchTimer: number | null = null
@@ -53,26 +62,26 @@ export class CloudFilePickerModal extends Modal {
     const right = toolbar.createDiv("cc-toolbar-right")
 
     const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115", "bilibili"]
-    const cloudLabels: Record<string, string> = {
-      aliyun: t("cloudLabelAliyun"),
-      baidu: t("cloudLabelBaidu"),
-      quark: t("cloudLabelQuark"),
-      onedrive: t("cloudLabelOnedrive"),
-      "115": t("cloudLabel115"),
-      bilibili: t("cloudLabelBilibili"),
-    }
 
     const select = left.createEl("select", { cls: "dropdown" })
+    select.createEl("option", { value: "all", text: "🌐 " + t("cloudLabelAll") })
+    select.createEl("option", { value: "", text: "─".repeat(12), attr: { disabled: "true" } })
     for (const c of clouds) {
-      select.createEl("option", { value: c, text: cloudLabels[c] })
+      select.createEl("option", { value: c, text: CLOUD_LABELS[c] })
     }
     select.value = this.currentCloud
     select.onchange = async () => {
-      this.currentCloud = select.value as CloudDiskType
+      this.currentCloud = select.value as CloudDiskType | "all"
       this.currentPath = "/"
       this.searchQuery = ""
       this.selected.clear()
-      if (this.currentCloud === "bilibili") {
+      if (this.currentCloud === "all") {
+        this.searchActive = true
+        this.searchRowEl.classList.toggle("cc-open", true)
+        searchBtn.classList.toggle("cc-active", true)
+        this.searchInputEl.placeholder = "🔍 " + t("allCloudSearch")
+        this.searchInputEl.focus()
+      } else if (this.currentCloud === "bilibili") {
         this.searchActive = true
         this.searchRowEl.classList.toggle("cc-open", this.searchActive)
         searchBtn.classList.toggle("cc-active", this.searchActive)
@@ -89,6 +98,7 @@ export class CloudFilePickerModal extends Modal {
     const searchBtn = right.createSpan({ cls: "cc-toolbar-btn" })
     setIcon(searchBtn, "search")
     searchBtn.onClickEvent(() => {
+      if (this.currentCloud === "all") return
       this.searchActive = !this.searchActive
       this.searchRowEl.classList.toggle("cc-open", this.searchActive)
       searchBtn.classList.toggle("cc-active", this.searchActive)
@@ -122,6 +132,12 @@ export class CloudFilePickerModal extends Modal {
       cls: "cc-toolbar-search-input",
       placeholder: t("searchPlaceholder"),
     })
+    if (this.currentCloud === "all") {
+      this.searchActive = true
+      this.searchRowEl.addClass("cc-open")
+      this.searchInputEl.placeholder = "🔍 " + t("allCloudSearch")
+      searchBtn.addClass("cc-active")
+    }
     this.searchInputEl.oninput = () => {
       this.searchQuery = this.searchInputEl.value
       if (this.searchTimer) window.clearTimeout(this.searchTimer)
@@ -205,7 +221,22 @@ export class CloudFilePickerModal extends Modal {
 
       let result: { files: CloudFileEntry[]; total: number; hasMore: boolean }
 
-      if (this.currentCloud === "bilibili") {
+      if (this.currentCloud === "all") {
+        if (!this.searchQuery) {
+          result = { files: [], total: 0, hasMore: false }
+        } else {
+          const clouds: CloudDiskType[] = ["aliyun", "baidu", "quark", "onedrive", "115"]
+          const tasks = clouds.map(c => this.syncVault.searchFiles(this.searchQuery, c, 20, 0))
+          if (this.bilibiliService) {
+            tasks.push(this.bilibiliService.search(this.searchQuery).then(entries => ({
+              files: entries, total: entries.length, hasMore: false,
+            })))
+          }
+          const allResults = await Promise.all(tasks)
+          const allFiles = allResults.flatMap(r => r.files)
+          result = { files: allFiles, total: allFiles.length, hasMore: false }
+        }
+      } else if (this.currentCloud === "bilibili") {
         if (!this.searchQuery) {
           result = { files: [], total: 0, hasMore: false }
         } else {
@@ -251,7 +282,7 @@ export class CloudFilePickerModal extends Modal {
     contentEl.querySelector(".cc-file-list")?.remove()
     contentEl.querySelector(".cc-footer")?.remove()
 
-    if (this.currentCloud !== "bilibili") {
+    if (this.currentCloud !== "bilibili" && this.currentCloud !== "all") {
       this.updateBreadcrumb()
     } else {
       this.breadcrumbEl.empty()
@@ -262,7 +293,11 @@ export class CloudFilePickerModal extends Modal {
     if (this.loading) {
       list.createEl("p", { text: t("loading"), cls: "cc-loading" })
     } else if (this.files.length === 0) {
-      if (this.currentCloud === "bilibili" && !this.searchQuery) {
+      if (this.currentCloud === "all" && !this.searchQuery) {
+        list.createEl("p", { text: "🔍 " + t("allCloudSearch"), cls: "cc-empty" })
+      } else if (this.currentCloud === "all") {
+        list.createEl("p", { text: t("emptyResult"), cls: "cc-empty" })
+      } else if (this.currentCloud === "bilibili" && !this.searchQuery) {
         list.createEl("p", { text: "🔍 " + t("searchBilibiliPlaceholder"), cls: "cc-empty" })
       } else if (this.currentCloud === "bilibili") {
         list.createEl("p", { text: t("bilibiliNoResults"), cls: "cc-empty" })
@@ -337,6 +372,12 @@ export class CloudFilePickerModal extends Modal {
       const sizeStr = file.isdir ? "" : this.formatSize(file.size)
       if (sizeStr) row.createSpan({ text: sizeStr, cls: "cc-file-size" })
 
+      if (file.cloudType !== "bilibili") {
+        row.createSpan({ cls: "cc-cloud-badge", text: CLOUD_LABELS[file.cloudType] })
+      } else {
+        row.createSpan({ cls: "cc-cloud-badge cc-cloud-badge-bili", text: CLOUD_LABELS.bilibili })
+      }
+
       if (file.cloudType === "bilibili" && this.bilibiliService) {
         const uploadBtn = row.createSpan({ cls: "cc-toolbar-btn" })
         setIcon(uploadBtn, "upload-cloud")
@@ -355,13 +396,13 @@ export class CloudFilePickerModal extends Modal {
         })
       }
 
-      if (file.isdir) {
+      if (file.isdir && this.currentCloud !== "all") {
         row.onClickEvent(async () => {
           this.currentPath = file.path
           this.selected.clear()
           await this.loadFiles()
         })
-      } else {
+      } else if (!file.isdir) {
         row.onClickEvent(() => {
           if (this.selected.size > 0 || isSelected) {
             this.toggleSelect(key, row)
@@ -392,11 +433,20 @@ export class CloudFilePickerModal extends Modal {
         })
         const nameEl = card.createDiv("cc-grid-name")
         nameEl.textContent = file.name
-        card.onClickEvent(async () => {
-          this.currentPath = file.path
-          this.selected.clear()
-          await this.loadFiles()
-        })
+
+        card.createDiv({ cls: "cc-cloud-badge cc-grid-badge", text: CLOUD_LABELS[file.cloudType] })
+
+        if (this.currentCloud !== "all") {
+          card.onClickEvent(async () => {
+            this.currentPath = file.path
+            this.selected.clear()
+            await this.loadFiles()
+          })
+        } else {
+          card.onClickEvent(() => {
+            this.toggleSelect(key, card)
+          })
+        }
         continue
       }
 
@@ -414,6 +464,8 @@ export class CloudFilePickerModal extends Modal {
       cb.textContent = isSelected ? "✓" : ""
       const nameEl = card.createDiv("cc-grid-name")
       nameEl.textContent = file.name
+
+      card.createDiv({ cls: "cc-cloud-badge cc-grid-badge", text: CLOUD_LABELS[file.cloudType] })
 
       if (file.cloudType === "bilibili" && this.bilibiliService) {
         const uploadBtn = card.createDiv({ cls: "cc-grid-upload-btn" })

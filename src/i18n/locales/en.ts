@@ -52,6 +52,8 @@ const en: Record<string, string> = {
   cloudLabelOnedrive: "OneDrive",
   cloudLabel115: "115",
   cloudLabelBilibili: "Bilibili",
+  cloudLabelAll: "All clouds",
+  allCloudSearch: "Search across all clouds...",
   searchBilibiliPlaceholder: "Search Bilibili videos...",
   bilibiliNoResults: "No videos found",
   bilibiliSearchError: "Search failed: {0}",
