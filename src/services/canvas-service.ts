@@ -120,21 +120,89 @@ export class CanvasService {
       return n.y * 100000 + n.x
     }
 
-    const dated = [...nodes]
-    dated.sort((a, b) => getMtime(a) - getMtime(b))
+    const sorted = [...nodes].sort((a, b) => getMtime(a) - getMtime(b))
 
-    const gapY = 40
-    const startX = Math.min(...dated.map(n => n.x))
-    const startY = Math.min(...dated.map(n => n.y))
-    let cursorY = startY
+    const monthMap = new Map<string, CanvasNode[]>()
+    for (const n of sorted) {
+      const ts = getMtime(n)
+      const d = ts > 10000000000 ? new Date(ts) : new Date(ts * 1000)
+      const key = d.toISOString().slice(0, 7)
+      if (!monthMap.has(key)) monthMap.set(key, [])
+      monthMap.get(key)!.push(n)
+    }
 
-    for (const n of dated) {
-      n.x = startX
-      n.y = cursorY
-      cursorY += n.height + gapY
+    const monthKeys = [...monthMap.keys()].sort()
+
+    const startX = Math.min(...nodes.map(n => n.x))
+    const startY = Math.min(...nodes.map(n => n.y))
+    const pad = 24
+    const headerH = 40
+    const gap = 16
+    const monthGap = 32
+    const cols = 3
+
+    const moves: { node: CanvasNode; x: number; y: number }[] = []
+    let cursorY = startY + pad
+    let rightMostX = 0
+
+    for (const key of monthKeys) {
+      const monthNodes = monthMap.get(key)!
+      const [y, m] = key.split("-").map(Number)
+      const monthLabel = `${y}年${m}月`
+
+      const headerId = `timeline-hdr-${key}-${Date.now()}`
+      data.nodes.push({
+        id: headerId,
+        type: "text",
+        x: startX + pad, y: cursorY,
+        width: 240, height: 24,
+        label: monthLabel,
+        text: `📅 **${monthLabel}**`,
+        color: "1",
+      })
+      cursorY += headerH
+
+      let rowMaxH = 0
+      let rowStartX = startX + pad
+
+      for (let i = 0; i < monthNodes.length; i++) {
+        const n = monthNodes[i]!
+        const col = i % cols
+
+        if (col === 0 && i > 0) {
+          cursorY += rowMaxH + gap
+          rowMaxH = 0
+          rowStartX = startX + pad
+        }
+
+        moves.push({ node: n, x: rowStartX, y: cursorY })
+        rowStartX += n.width + gap
+        rowMaxH = Math.max(rowMaxH, n.height)
+      }
+
+      cursorY += rowMaxH + monthGap
+      rightMostX = Math.max(rightMostX, rowStartX)
+    }
+
+    const totalW = rightMostX - startX + pad
+    const totalH = cursorY - startY + pad
+
+    const groupId = `timeline-group-${Date.now()}`
+    data.nodes.push({
+      id: groupId,
+      x: startX, y: startY,
+      width: totalW, height: totalH,
+      type: "group",
+      label: `📅 时间轴 (${nodes.length})`,
+    })
+
+    for (const move of moves) {
+      move.node.x = move.x
+      move.node.y = move.y
     }
 
     await this.setData(data)
+    this.scrollToNode(groupId)
   }
 
   async layoutGrid(cols = 4): Promise<void> {
