@@ -31,11 +31,12 @@ export class CloudNodeService {
     const color = CLOUD_NODE_COLORS[category] || "1"
     const label = file.name.replace(/\.[^.]+$/, "")
 
-    const isWide = category === "video" || category === "audio"
+    const isWide = category === "video"
     const isTall = category === "ebook"
     const isImage = category === "image"
-    const w = category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220
-    const h = category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280
+    const isAudio = category === "audio"
+    const w = isAudio ? 360 : category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220
+    const h = isAudio ? 280 : category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280
 
     await this.canvasService.addCloudNode(
       nodeId, label, content, color,
@@ -80,12 +81,13 @@ export class CloudNodeService {
         sized.push({ file, w: cols * cardW + (cols - 1) * gap, h: 80 + 16 + gridH })
       } else {
         const category = this.syncVault.getCategory(file)
-        const isWide = category === "video" || category === "audio"
+        const isWide = category === "video"
         const isImage = category === "image"
+        const isAudio = category === "audio"
         sized.push({
           file,
-          w: category === "video" ? 640 : isImage ? 400 : isWide ? 480 : 220,
-          h: category === "video" ? 360 : isImage ? 300 : isWide ? 200 : 280,
+          w: isAudio ? 360 : category === "video" ? 640 : isImage ? 400 : isWide ? 480 : 220,
+          h: isAudio ? 280 : category === "video" ? 360 : isImage ? 300 : isWide ? 200 : 280,
         })
       }
     }
@@ -125,14 +127,15 @@ export class CloudNodeService {
     const nodeId = `cloud-${category}-${file.cloudType}-${file.fsid}-${Date.now()}`
     const color = CLOUD_NODE_COLORS[category] || "1"
     const label = file.name.replace(/\.[^.]+$/, "")
-    const isWide = category === "video" || category === "audio"
+    const isWide = category === "video"
     const isTall = category === "ebook"
     const isImage = category === "image"
+    const isAudio = category === "audio"
     return {
       id: nodeId,
       x: pos.x, y: pos.y,
-      width: category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220,
-      height: category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280,
+      width: isAudio ? 360 : category === "video" ? 640 : isImage ? 400 : isTall ? 260 : isWide ? 480 : 220,
+      height: isAudio ? 280 : category === "video" ? 360 : isImage ? 300 : isTall ? 340 : isWide ? 200 : 280,
       type: "text", label, text: content, color,
     }
   }

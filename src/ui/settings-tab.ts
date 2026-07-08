@@ -170,6 +170,20 @@ export class ContextCanvasSettingTab extends PluginSettingTab {
             this.plugin.applyEbookStyle(val)
           })
         })
+
+      new Setting(el)
+        .setName("Audio card style")
+        .setDesc("Visual style for audio cards in canvas")
+        .addDropdown((dd) => {
+          dd.addOption("default", "Default")
+          dd.addOption("spotify", "Spotify (dark + album art)")
+          dd.setValue(this.plugin.settings.audioCardStyle)
+          dd.onChange(async (val: string) => {
+            this.plugin.settings.audioCardStyle = val
+            await this.plugin.saveSettings()
+            this.plugin.applyAudioCardStyle(val)
+          })
+        })
     })
   }
 

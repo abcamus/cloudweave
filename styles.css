@@ -1051,3 +1051,78 @@ pre.cc-bilibili-pre + * {
   font-size: 9px;
   line-height: 16px;
 }
+
+/* ───── Audio Card: Spotify style ───── */
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .canvas-node-container {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .canvas-node-content {
+  background: #121212;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .markdown-preview-view {
+  padding: 0;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre {
+  margin: 0;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre pre {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-height: unset;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .audio-cover {
+  border-radius: 8px;
+  margin: 12px 12px 0;
+  aspect-ratio: 1;
+  background-size: cover;
+  background-position: center;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .cloud-video-player-wrapper {
+  padding: 8px 12px 12px;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] audio {
+  width: 100%;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] h3 {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 12px;
+  margin: 0;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] h3 .heading-collapse-indicator {
+  display: none;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] p {
+  padding: 0 12px 12px;
+  margin: 0;
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] p code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #b3b3b3;
+  font-size: 12px;
+}

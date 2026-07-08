@@ -13,6 +13,7 @@ export interface PluginSettings {
   cardStyle: string
   imageCardStyle: string
   ebookStyle: string
+  audioCardStyle: string
   llmSecretName: string
   tavilySecretName: string
   bilibiliSecretName: string
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   cardStyle: "default",
   imageCardStyle: "poster",
   ebookStyle: "default",
+  audioCardStyle: "default",
   llmSecretName: "",
   tavilySecretName: "",
   bilibiliSecretName: "",
@@ -45,6 +47,11 @@ const EBOOK_STYLE_CLASSES = [
   "cc-ebook-style-default",
   "cc-ebook-style-apple",
   "cc-ebook-style-kind",
+]
+
+const AUDIO_STYLE_CLASSES = [
+  "cc-audio-card-default",
+  "cc-audio-card-spotify",
 ]
 
 interface MenuEl {
@@ -76,6 +83,7 @@ export default class ContextCanvasPlugin extends Plugin {
     this.applyCardStyle(this.settings.cardStyle)
     this.applyImageCardStyle(this.settings.imageCardStyle)
     this.applyEbookStyle(this.settings.ebookStyle)
+    this.applyAudioCardStyle(this.settings.audioCardStyle)
     this.canvasService = new CanvasService(this.app)
     this.syncVault = new SyncVaultBridge()
     this.bilibiliService = new BilibiliService(this.app, this.canvasService, this.syncVault)
@@ -291,11 +299,17 @@ export default class ContextCanvasPlugin extends Plugin {
     activeDocument.body.addClass(`cc-ebook-style-${style}`)
   }
 
+  applyAudioCardStyle(style: string) {
+    activeDocument.body.removeClass(...AUDIO_STYLE_CLASSES)
+    activeDocument.body.addClass(`cc-audio-card-${style}`)
+  }
+
   onunload() {
     this.toolbar?.unmount()
     this.menuObserver?.disconnect()
     activeDocument.body.removeClass(...CARD_STYLE_CLASSES)
     activeDocument.body.removeClass(...IMAGE_STYLE_CLASSES)
     activeDocument.body.removeClass(...EBOOK_STYLE_CLASSES)
+    activeDocument.body.removeClass(...AUDIO_STYLE_CLASSES)
   }
 }
