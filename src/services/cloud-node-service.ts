@@ -430,7 +430,7 @@ export class CloudNodeService {
       ].join("\n\n")
     } else if (category === "audio") {
       display = [
-        `\`\`\`cloudaudio\n${file.cloudType}://${file.path} | ${file.name}\n\`\`\``,
+        `\`\`\`cloudvideo\n${file.cloudType}://${file.path} | ${file.name}\n\`\`\``,
         `### 🎧 ${file.name.replace(/\.[^.]+$/, "")}`,
         `\`${cloudLabel}\` \`${sizeLabel}\``,
       ].join("\n\n")
