@@ -25,9 +25,12 @@
 .cc-toolbar-left select.dropdown {
   flex-shrink: 0;
   width: auto;
+  height: 28px;
   max-width: 100px;
   font-size: 13px;
-  padding: 2px 20px 2px 6px;
+  padding: 0 22px 0 8px;
+  border-radius: 5px;
+  background: transparent;
 }
 
 .cc-toolbar-breadcrumb {
@@ -153,7 +156,6 @@
 
 .cc-file-row.cc-selected {
   background: var(--background-modifier-active);
-  outline: 1px solid var(--interactive-accent);
 }
 
 .cc-file-checkbox {
@@ -1053,73 +1055,73 @@ pre.cc-bilibili-pre + * {
 }
 
 /* ───── Audio Card: Spotify style ───── */
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .canvas-node-container {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .canvas-node-container {
   border-radius: 12px;
   overflow: hidden;
-}
-
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .canvas-node-content {
   background: #121212;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .markdown-preview-view {
-  padding: 0;
-}
-
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre {
-  margin: 0;
-}
-
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre pre {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .canvas-node-content {
   background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .el-pre code {
-  background: transparent;
-  border: none;
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .markdown-preview-view {
   padding: 0;
+  background: transparent;
+}
+
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .markdown-preview-sizer {
+  padding-bottom: 0;
   min-height: unset;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .audio-cover {
-  border-radius: 8px;
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .el-pre {
+  margin: 0;
+}
+
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .el-pre .block-language-cloudvideo {
+  background: transparent;
+}
+
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .audio-cover {
+  border-radius: 12px;
   margin: 12px 12px 0;
   aspect-ratio: 1;
   background-size: cover;
   background-position: center;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] .cloud-video-player-wrapper {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) .cloud-video-player-wrapper {
   padding: 8px 12px 12px;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] audio {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) audio {
   width: 100%;
+  display: block;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] h3 {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) h3 {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 4px 16px;
   margin: 0;
+  background: transparent;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] h3 .heading-collapse-indicator {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) h3 .heading-collapse-indicator {
   display: none;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] p {
-  padding: 0 12px 12px;
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) p {
+  padding: 0 16px 12px;
   margin: 0;
   font-size: 12px;
   color: #b3b3b3;
+  background: transparent;
 }
 
-body.cc-audio-card-spotify .canvas-node[data-id^="cloud-audio-"] p code {
+body.cc-audio-card-spotify .canvas-node:has(.el-h3 h3[data-heading^="🎧"]) p code {
   background: transparent;
   border: none;
   padding: 0;

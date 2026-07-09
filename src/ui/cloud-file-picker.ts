@@ -74,6 +74,7 @@ export class CloudFilePickerModal extends Modal {
       this.currentPath = "/"
       this.searchQuery = ""
       this.selected.clear()
+      this.searchInputEl.value = ""
       if (this.currentCloud === "all") {
         this.searchActive = true
         this.searchRowEl.classList.toggle("cc-open", true)
@@ -140,7 +141,11 @@ export class CloudFilePickerModal extends Modal {
     this.searchInputEl.oninput = () => {
       this.searchQuery = this.searchInputEl.value
       if (this.searchTimer) window.clearTimeout(this.searchTimer)
-      this.searchTimer = window.setTimeout(() => void this.loadFiles(), 300)
+      if (this.currentCloud === "bilibili" && this.parseBilibiliUrl(this.searchQuery)) {
+        void this.loadFiles()
+      } else {
+        this.searchTimer = window.setTimeout(() => void this.loadFiles(), 300)
+      }
     }
   }
 
@@ -239,8 +244,19 @@ export class CloudFilePickerModal extends Modal {
         if (!this.searchQuery) {
           result = { files: [], total: 0, hasMore: false }
         } else {
-          const entries = await this.bilibiliService!.search(this.searchQuery)
-          result = { files: entries, total: entries.length, hasMore: false }
+          const bvid = this.parseBilibiliUrl(this.searchQuery)
+          if (bvid) {
+            try {
+              const entry = await this.bilibiliService!.getVideo(bvid)
+              result = { files: [entry], total: 1, hasMore: false }
+            } catch (e) {
+              result = { files: [], total: 0, hasMore: false }
+              new Notice(e instanceof Error ? e.message : "视频解析失败")
+            }
+          } else {
+            const entries = await this.bilibiliService!.search(this.searchQuery)
+            result = { files: entries, total: entries.length, hasMore: false }
+          }
         }
       } else if (this.searchQuery) {
         result = await this.syncVault.searchFiles(
@@ -368,7 +384,9 @@ export class CloudFilePickerModal extends Modal {
       }
       fileNameSpan.createSpan({ text: " " + file.name })
 
-      const sizeStr = file.isdir ? "" : this.formatSize(file.size)
+      const sizeStr = file.isdir ? "" : file.cloudType === "bilibili"
+        ? this.formatDuration(file.size)
+        : this.formatSize(file.size)
       if (sizeStr) row.createSpan({ text: sizeStr, cls: "cc-file-size" })
 
       if (file.cloudType !== "bilibili") {
@@ -562,5 +580,17 @@ export class CloudFilePickerModal extends Modal {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
     if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`
     return `${(bytes / 1024 / 1024 / 1024).toFixed(1)}GB`
+  }
+
+  private formatDuration(sec: number): string {
+    if (sec <= 0) return ""
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return `${m}:${String(s).padStart(2, "0")}`
+  }
+
+  private parseBilibiliUrl(input: string): string | null {
+    const m = input.match(/BV[\w]{10}/)
+    return m ? m[0] : null
   }
 }

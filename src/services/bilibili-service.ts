@@ -126,7 +126,7 @@ export class BilibiliService {
       name: item.title.replace(/<[^>]+>/g, ""),
       isdir: false,
       fsid: item.bvid,
-      size: 0,
+      size: this.parseDuration(item.duration),
       ctime: 0,
       mtime: 0,
       thumb: item.pic.startsWith("//") ? "https:" + item.pic : item.pic,
@@ -295,5 +295,12 @@ export class BilibiliService {
       const pre = el.closest("pre")
       if (pre) pre.addClass("cc-bilibili-pre")
     }
+  }
+
+  private parseDuration(d: string): number {
+    const parts = d.split(":").map(Number)
+    if (parts.length === 2) return parts[0]! * 60 + parts[1]!
+    if (parts.length === 3) return parts[0]! * 3600 + parts[1]! * 60 + parts[2]!
+    return 0
   }
 }
